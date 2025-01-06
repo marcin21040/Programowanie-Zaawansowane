@@ -1,13 +1,13 @@
-package mateusz.zero;
+package com.company;
 
 import javax.swing.*;
 
-public class Okno extends JFrame {
+public class MZ_Okno extends JFrame {
 
     public static int winWidth = 500;
     public static int winHeight = 600;
 
-    public Okno(String nazwa){
+    public MZ_Okno(String nazwa){
         super(nazwa);
 
         setSize(winWidth, winHeight);
