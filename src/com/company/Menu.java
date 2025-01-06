@@ -41,7 +41,8 @@ public class Menu extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == newGameButton_Michala) {
-
+            GameMichalStart gameMichal = new GameMichalStart();
+            gameMichal.startGame();
             JOptionPane.showMessageDialog(this, "Nowa gra rozpoczęta!");
         } else if (e.getSource() == exitButton) {
 
@@ -50,7 +51,6 @@ public class Menu extends JFrame implements ActionListener {
         {
             JOptionPane.showMessageDialog(this, "Nowa gra rozpoczęta!");
         }else if (e.getSource()==newGameButton_Marcina)
-
         {
             GameMarcinStart gameMarcin = new GameMarcinStart();
             gameMarcin.startGame();
