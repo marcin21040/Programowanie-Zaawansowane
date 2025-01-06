@@ -12,6 +12,9 @@ public class GameMichalPanel extends JPanel {
     private java.util.List<MichalEnemy> enemies = new ArrayList<>();
     private java.util.List<MichalTower> towers = new ArrayList<>();
     private java.util.List<MichalProjectile> projectiles = new ArrayList<>();
+    private java.util.List<Point> path = new ArrayList<>();
+
+
 
     private Timer gameTimer;
 
@@ -25,6 +28,12 @@ public class GameMichalPanel extends JPanel {
 
     public GameMichalPanel() {
         setPreferredSize(new Dimension(800, 600));
+
+        // Initialize the path
+        path.add(new Point(50, 100));
+        path.add(new Point(200, 100));
+        path.add(new Point(200, 300));
+        path.add(new Point(600, 300));
 
         // Dodajemy MouseListener, żeby np. stawiać wieże klikając w panel
         addMouseListener(new MouseAdapter() {
@@ -136,7 +145,13 @@ public class GameMichalPanel extends JPanel {
      * Spawnowanie nowego wroga na początkowych współrzędnych.
      */
     private void spawnEnemy() {
-        enemies.add(new MichalEnemy(enemyStartX, enemyStartY, 2, 100));
+        enemies.add(new MichalEnemy(
+                50,                    // start X
+                100,                   // start Y
+                path,                  // cała lista punktów
+                2.0,                   // speed
+                100                    // maxHealth
+        ));
     }
 
     /**
@@ -155,7 +170,7 @@ public class GameMichalPanel extends JPanel {
         return closest;
     }
 
-    private double distance(int x1, int y1, int x2, int y2) {
+    private double distance(double x1, double y1, double x2, double y2) {
         return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
     }
 }

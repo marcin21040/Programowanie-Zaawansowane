@@ -36,7 +36,7 @@ public class MichalTower {
         if (currentTime - lastShotTime > cooldown) {
             lastShotTime = currentTime;
             // Tworzymy pocisk lecący z wieży w kierunku wroga
-            return new MichalProjectile(x, y, enemy.getX(), enemy.getY(), damage);
+            return new MichalProjectile(x, y, (int) enemy.getX(), (int) enemy.getY(), damage);
         }
         return null;
     }
