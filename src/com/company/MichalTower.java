@@ -13,9 +13,13 @@ public class MichalTower {
     // Wielkość wieży
     private int size = 30;
 
-    public MichalTower(int x, int y) {
+    // Koszt wieży (jeśli chcemy różne wieże, można wprowadzić różne koszty w konstruktorze)
+    private int cost;
+
+    public MichalTower(int x, int y, int cost) {
         this.x = x;
         this.y = y;
+        this.cost = cost;
     }
 
     public void draw(Graphics g) {
@@ -28,8 +32,9 @@ public class MichalTower {
     }
 
     /**
-     * Próba strzału w wybranego wroga. Zwraca obiekt MichalProjectile,
-     * jeśli udało się strzelić (cooldown minął), lub null w przeciwnym razie.
+     * Próba strzału w wybranego wroga.
+     * Zwraca obiekt MichalProjectile, jeśli udało się strzelić (cooldown minął),
+     * lub null, jeśli jeszcze nie czas na kolejny strzał.
      */
     public MichalProjectile shootAt(MichalEnemy enemy) {
         long currentTime = System.currentTimeMillis();
@@ -52,5 +57,9 @@ public class MichalTower {
 
     public int getRange() {
         return range;
+    }
+
+    public int getCost() {
+        return cost;
     }
 }

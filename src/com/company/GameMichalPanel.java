@@ -5,6 +5,8 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class GameMichalPanel extends JPanel {
 
@@ -12,30 +14,43 @@ public class GameMichalPanel extends JPanel {
     private java.util.List<MichalEnemy> enemies = new ArrayList<>();
     private java.util.List<MichalTower> towers = new ArrayList<>();
     private java.util.List<MichalProjectile> projectiles = new ArrayList<>();
-    private java.util.List<Point> path = new ArrayList<>();
-
-
-
+    private List<Point> enemyPath;
     private Timer gameTimer;
 
-    // Przykładowe współrzędne, gdzie wrogowie startują (po lewej)
+    // ------------------ FINANSE ------------------
+    // Ilość pieniędzy gracza
+    private int money = 200;
+    // Maksymalna liczba wież (limit)
+    private int towerLimit = 5;
+    // Koszt jednej wieży (w tym przykładzie stały, ale można rozszerzyć)
+    private int defaultTowerCost = 50;
+
+    // Pasywne zarabianie:
+    // co ile milisekund dostajemy "passiveIncomeAmount" pieniędzy
+    private long lastPassiveIncomeTime = 0;
+    private long passiveIncomeInterval = 3000; // co 3 sekundy
+    private int passiveIncomeAmount = 10;      // dostaniemy 10 pieniędzy co 3 sekundy
+
+    // ------------ KONIEC FINANSÓW ------------
+
+    // Pozycja startowa wrogów (dla spawnowania)
     private int enemyStartX = 50;
     private int enemyStartY = 100;
 
-    // Czas (w milisekundach) co jaki pojawia się nowy wróg
+    // Czas co jaki pojawia się nowy wróg
     private int spawnInterval = 2000;
     private long lastSpawnTime = 0;
 
+
+
     public GameMichalPanel() {
         setPreferredSize(new Dimension(800, 600));
-
-        // Initialize the path
-        path.add(new Point(50, 100));
-        path.add(new Point(200, 100));
-        path.add(new Point(200, 300));
-        path.add(new Point(600, 300));
-
-        // Dodajemy MouseListener, żeby np. stawiać wieże klikając w panel
+        enemyPath = new ArrayList<>();
+        enemyPath.add(new Point(50, 100));
+        enemyPath.add(new Point(200, 100));
+        enemyPath.add(new Point(200, 300));
+        enemyPath.add(new Point(600, 300));
+        // MouseListener do stawiania wież
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -43,7 +58,7 @@ public class GameMichalPanel extends JPanel {
             }
         });
 
-        // Timer (ok. 60 FPS = 16 ms)
+        // Timer ~60 FPS
         gameTimer = new Timer(16, e -> {
             updateGameLogic();
             repaint();
@@ -58,7 +73,7 @@ public class GameMichalPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // Rysowanie "tła"
+        // Tło
         g.setColor(Color.LIGHT_GRAY);
         g.fillRect(0, 0, getWidth(), getHeight());
 
@@ -77,33 +92,42 @@ public class GameMichalPanel extends JPanel {
             p.draw(g);
         }
 
-        // Przykładowy napis:
+        // Interfejs – np. informacja o aktualnych pieniądzach i limicie wież
         g.setColor(Color.BLACK);
-        g.drawString("Kliknij na planszy, aby postawić wieżę.", 10, 20);
+        g.drawString("Pieniądze: " + money, 10, 20);
+        g.drawString("Limit wież: " + towers.size() + "/" + towerLimit, 10, 40);
+        g.drawString("Kliknij na planszy, aby postawić wieżę (koszt " + defaultTowerCost + ")", 10, 60);
     }
 
     /**
      * Główna metoda aktualizacji logiki gry.
      */
     private void updateGameLogic() {
-        // 1. Spawn nowych wrogów co określony czas
         long currentTime = System.currentTimeMillis();
+
+        // 1. Pasywne dochody
+        if (currentTime - lastPassiveIncomeTime >= passiveIncomeInterval) {
+            money += passiveIncomeAmount;
+            lastPassiveIncomeTime = currentTime;
+        }
+
+        // 2. Spawn nowych wrogów co 'spawnInterval'
         if (currentTime - lastSpawnTime > spawnInterval) {
             spawnEnemy();
             lastSpawnTime = currentTime;
         }
 
-        // 2. Aktualizuj pozycje wrogów
+        // 3. Aktualizuj pozycje wrogów
         for (MichalEnemy enemy : enemies) {
             enemy.update();
         }
 
-        // 3. Aktualizuj wieże (np. czy strzelają do wroga, generują pociski)
+        // 4. Wieże strzelają
         for (MichalTower tower : towers) {
             // Znajdź najbliższego wroga w zasięgu
             MichalEnemy target = findClosestEnemy(tower.getX(), tower.getY(), tower.getRange());
             if (target != null) {
-                // Wieża może strzelić (jeśli cooldown minął)
+                // Wieża strzela (gdy cooldown minął)
                 MichalProjectile shot = tower.shootAt(target);
                 if (shot != null) {
                     projectiles.add(shot);
@@ -111,7 +135,7 @@ public class GameMichalPanel extends JPanel {
             }
         }
 
-        // 4. Aktualizuj pociski (ruch i kolizje)
+        // 5. Aktualizuj pociski (ruch i kolizje)
         for (MichalProjectile p : projectiles) {
             p.update();
             // Sprawdź kolizję z wrogami
@@ -125,33 +149,57 @@ public class GameMichalPanel extends JPanel {
             }
         }
 
-        // 5. Usuń nieaktywnych wrogów (pokonani lub wyszli poza planszę)
-        enemies.removeIf(enemy -> !enemy.isAlive() || enemy.getX() > getWidth() + 50);
+        // 6. Usuwanie pokonanych wrogów i przyznawanie pieniędzy
+        //    (lepiej robić to w pętli z iteratorem)
+        Iterator<MichalEnemy> enemyIterator = enemies.iterator();
+        while (enemyIterator.hasNext()) {
+            MichalEnemy enemy = enemyIterator.next();
+            // Jeśli wróg jest martwy...
+            if (!enemy.isAlive()) {
+                // Zarabiamy dodatkowe pieniądze za zabicie
+                money += 20; // np. 20 za zniszczenie przeciwnika
+                enemyIterator.remove();
+            }
+            // Możesz też dodać warunek, jeśli wróg wyszedł poza mapę
+            // i np. odejmuje HP bazie gracza.
+            else if (enemy.getX() > getWidth() + 50) {
+                enemyIterator.remove();
+            }
+        }
 
-        // 6. Usuń nieaktywne pociski
+        // 7. Usuń nieaktywne pociski
         projectiles.removeIf(p -> !p.isActive() || p.getX() > getWidth() + 50);
 
-        // 7. Ewentualnie: warunki zwycięstwa / porażki, itp.
+        // 8. (opcjonalnie) sprawdź warunki zwycięstwa / porażki itp.
     }
 
     /**
      * Metoda do stawiania wieży w miejscu kliknięcia.
      */
     private void placeTower(int x, int y) {
-        towers.add(new MichalTower(x, y));
+        // Sprawdź, czy możemy postawić wieżę:
+        // 1) czy mamy kasę
+        // 2) czy nie przekraczamy limitu
+        if (money >= defaultTowerCost && towers.size() < towerLimit) {
+            // Tworzymy nową wieżę o domyślnym koszcie (np. 50)
+            MichalTower newTower = new MichalTower(x, y, defaultTowerCost);
+            towers.add(newTower);
+            // Odejmij koszt
+            money -= defaultTowerCost;
+        } else {
+            // Możesz wyświetlić komunikat o braku pieniędzy albo przekroczonym limicie
+            System.out.println("Nie możesz postawić wieży! Brak środków lub osiągnięto limit wież.");
+        }
     }
 
     /**
-     * Spawnowanie nowego wroga na początkowych współrzędnych.
+     * Spawnowanie nowego wroga w prostej wersji (bez ścieżki).
+     * Jeśli chcesz dodać ścieżkę, przekazuj np. listę punktów do konstruktora wroga.
      */
     private void spawnEnemy() {
-        enemies.add(new MichalEnemy(
-                50,                    // start X
-                100,                   // start Y
-                path,                  // cała lista punktów
-                2.0,                   // speed
-                100                    // maxHealth
-        ));
+        enemies.add(new MichalEnemy(enemyStartX, enemyStartY, enemyPath, 2, 100));
+        // Taki konstruktor: MichalEnemy(int x, int y, int speed, int health)
+        // lub zmodyfikuj, jeśli masz u siebie wersję z listą punktów.
     }
 
     /**
