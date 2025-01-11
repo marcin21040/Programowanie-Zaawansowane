@@ -48,7 +48,7 @@ public class Menu extends JFrame implements ActionListener {
             System.exit(0);
         } else if (e.getSource() == newGameButton_Mateusza) {
             MZ_GRA gameMateusz = new MZ_GRA();
-            gameMateusz.startGame();
+            gameMateusz.rozpocznijGre();
             JOptionPane.showMessageDialog(this, "Nowa gra rozpoczęta!");
         } else if (e.getSource() == newGameButton_Marcina) {
             GameMarcinStart gameMarcin = new GameMarcinStart();
