@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class MZ_GRA {
 
@@ -28,10 +29,14 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
     private final int SZEROKOSC = 800;
     private final int WYSOKOSC = 600;
     private final int OPOZNIENIE = 15;
+    private final int CZESTOTLIWOSC_WROGOW = 100;
 
     private Timer zegar;
     private Statek statek;
     private ArrayList<Pocisk> pociski;
+    private ArrayList<Kosmita> enemies;
+    private int enemySpawnCounter = 0;
+    private boolean graTrwa = true;
 
     public PanelGry() {
         setPreferredSize(new Dimension(SZEROKOSC, WYSOKOSC));
@@ -41,6 +46,7 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
 
         statek = new Statek(SZEROKOSC / 2 - 25, WYSOKOSC - 80);
         pociski = new ArrayList<>();
+        enemies = new ArrayList<>();
 
         zegar = new Timer(OPOZNIENIE, this);
         zegar.start();
@@ -49,14 +55,25 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        statek.rysuj(g);
-        for (Pocisk pocisk : pociski) {
-            pocisk.rysuj(g);
+        if (graTrwa) {
+            statek.rysuj(g);
+            for (Pocisk pocisk : pociski) {
+                pocisk.rysuj(g);
+            }
+            for (Kosmita kosmita : enemies) {
+                kosmita.rysuj(g);
+            }
+        } else {
+            g.setColor(Color.GREEN);
+            g.setFont(new Font("Arial", Font.BOLD, 36));
+            g.drawString("KONIEC GRY!", SZEROKOSC / 2 - 100, WYSOKOSC / 2);
         }
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        if (!graTrwa) return;
+
         statek.rusz();
         for (int i = 0; i < pociski.size(); i++) {
             Pocisk pocisk = pociski.get(i);
@@ -66,11 +83,50 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
                 i--;
             }
         }
+
+        enemySpawnCounter++;
+        if (enemySpawnCounter >= CZESTOTLIWOSC_WROGOW) {
+            spawnEnemy();
+            enemySpawnCounter = 0;
+        }
+
+        Iterator<Kosmita> enemyIterator = enemies.iterator();
+        while (enemyIterator.hasNext()) {
+            Kosmita kosmita = enemyIterator.next();
+            kosmita.rusz();
+
+            Iterator<Pocisk> pociskIterator = pociski.iterator();
+            while (pociskIterator.hasNext()) {
+                Pocisk pocisk = pociskIterator.next();
+                if (kosmita.getBounds().intersects(pocisk.getBounds())) {
+                    enemyIterator.remove();
+                    pociskIterator.remove();
+                    break;
+                }
+            }
+
+            if (kosmita.getBounds().intersects(statek.getBounds())) {
+                graTrwa = false;
+                zegar.stop();
+            }
+
+            if (kosmita.getY() > WYSOKOSC) {
+                enemyIterator.remove();
+            }
+        }
+
         repaint();
+    }
+
+    private void spawnEnemy() {
+        int x = (int) (Math.random() * (SZEROKOSC - Kosmita.SZEROKOSC));
+        enemies.add(new Kosmita(x, 0));
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
+        if (!graTrwa) return;
+
         int klawisz = e.getKeyCode();
 
         if (klawisz == KeyEvent.VK_LEFT) {
@@ -121,6 +177,10 @@ class Statek {
         g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
     }
 
+    public Rectangle getBounds() {
+        return new Rectangle(x, y, SZEROKOSC, WYSOKOSC);
+    }
+
     public int getX() {
         return x;
     }
@@ -132,6 +192,7 @@ class Statek {
     public int getSzerokosc() {
         return SZEROKOSC;
     }
+
 }
 
 class Pocisk {
@@ -154,8 +215,40 @@ class Pocisk {
         g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
     }
 
+    public Rectangle getBounds() {
+        return new Rectangle(x, y, SZEROKOSC, WYSOKOSC);
+    }
+
     public int getY() {
         return y;
     }
 }
 
+class Kosmita {
+    public static final int SZEROKOSC = 40, WYSOKOSC = 40;
+    private int x, y;
+    private final int PREDKOSC = 2;
+    private final Color KOLOR = Color.GREEN;
+
+    public Kosmita(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public void rusz() {
+        y += PREDKOSC;
+    }
+
+    public void rysuj(Graphics g) {
+        g.setColor(KOLOR);
+        g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
+    }
+
+    public Rectangle getBounds() {
+        return new Rectangle(x, y, SZEROKOSC, WYSOKOSC);
+    }
+
+    public int getY() {
+        return y;
+    }
+}
