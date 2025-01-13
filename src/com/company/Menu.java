@@ -52,7 +52,7 @@ public class Menu extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(this, "Nowa gra rozpoczęta!");
         } else if (e.getSource() == newGameButton_Marcina) {
             GameMarcinStart gameMarcin = new GameMarcinStart();
-            gameMarcin.startGame();
+            //gameMarcin.startGame();
             JOptionPane.showMessageDialog(this, "Nowa gra rozpoczęta!");
         }
     }
