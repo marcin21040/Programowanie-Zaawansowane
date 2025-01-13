@@ -168,6 +168,13 @@ public class MichalEnemy {
         return alive;
     }
 
+    public boolean isPathFinished() {
+        // Jeżeli currentCheckpointIndex >= path.size()
+        // oznacza, że wróg przeszedł całą trasę
+        return (!alive) || (path != null && currentCheckpointIndex >= path.size());
+    }
+
+
     // Gettery
     public int getHealth() {
         return health;
