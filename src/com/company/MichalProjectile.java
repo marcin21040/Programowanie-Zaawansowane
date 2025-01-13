@@ -5,7 +5,7 @@ import java.awt.*;
 public class MichalProjectile {
     private double x;
     private double y;
-    private double speed = 5.0;
+    private double speed = 7.0;
     private int damage;
     private boolean active = true;
 
