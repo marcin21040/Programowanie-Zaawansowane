@@ -36,6 +36,7 @@ class RamkaGry extends JFrame {
 
 class PanelPunktow extends JPanel {
     private JLabel punktyLabel;
+    private JLabel predkoscLabel;
     private PanelGry panelGry;
 
     public PanelPunktow(PanelGry panelGry) {
@@ -44,14 +45,30 @@ class PanelPunktow extends JPanel {
         setBackground(Color.DARK_GRAY);
         setLayout(new GridBagLayout());
 
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(10, 0, 10, 0);
+
         punktyLabel = new JLabel("Punkty: 0");
         punktyLabel.setForeground(Color.WHITE);
         punktyLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        add(punktyLabel);
+        add(punktyLabel, gbc);
+
+        gbc.gridy = 1; // Pozycja poniżej punktów
+        predkoscLabel = new JLabel("Prędkość: 1.0");
+        predkoscLabel.setForeground(Color.WHITE);
+        predkoscLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        add(predkoscLabel, gbc);
     }
 
     public void aktualizujPunkty(int punkty) {
         punktyLabel.setText("Punkty: " + punkty);
+        repaint();
+    }
+
+    public void aktualizujPredkosc(double predkosc) {
+        predkoscLabel.setText(String.format("Prędkość: %.1f", predkosc));
         repaint();
     }
 }
@@ -62,6 +79,7 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
     private final int OPOZNIENIE = 15;
     private final int CZESTOTLIWOSC_WROGOW = 100;
     private final int CZESTOTLIWOSC_KOMET = 200;
+    private final int CZESTOTLIWOSC_GWIAZD = 20;
     private int punkty = 0;
     private PanelPunktow panelPunktow;
 
@@ -70,9 +88,12 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
     private ArrayList<Pocisk> pociski;
     private ArrayList<Kosmita> enemies;
     private ArrayList<Kometa> komety;
+    private ArrayList<Gwiazda> gwiazdy;
     private int enemySpawnCounter = 0;
     private int kometaSpawnCounter = 0;
+    private int gwiazdaSpawnCounter = 0;
     private boolean graTrwa = true;
+    private double predkoscGry = 1.0;
 
     public PanelGry() {
         setPreferredSize(new Dimension(SZEROKOSC, WYSOKOSC));
@@ -84,6 +105,7 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         pociski = new ArrayList<>();
         enemies = new ArrayList<>();
         komety = new ArrayList<>();
+        gwiazdy = new ArrayList<>();
 
         zegar = new Timer(OPOZNIENIE, this);
         zegar.start();
@@ -93,6 +115,11 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         if (graTrwa) {
+
+            for (Gwiazda gwiazda : gwiazdy) {
+                gwiazda.rysuj(g);
+            }
+
             statek.rysuj(g);
             for (Pocisk pocisk : pociski) {
                 pocisk.rysuj(g);
@@ -114,14 +141,17 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         this.panelPunktow = panelPunktow;
     }
 
-
     @Override
     public void actionPerformed(ActionEvent e) {
         if (!graTrwa) return;
 
         statek.rusz();
 
-        // Ruch pocisków
+        predkoscGry += 0.001;
+        if (panelPunktow != null) {
+            panelPunktow.aktualizujPredkosc(predkoscGry);
+        }
+
         for (int i = 0; i < pociski.size(); i++) {
             Pocisk pocisk = pociski.get(i);
             pocisk.rusz();
@@ -143,11 +173,27 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
             kometaSpawnCounter = 0;
         }
 
-        // Obsługa kolizji kosmitów
+        gwiazdaSpawnCounter++;
+        if (gwiazdaSpawnCounter >= CZESTOTLIWOSC_GWIAZD) {
+            spawnGwiazda();
+            gwiazdaSpawnCounter = 0;
+        }
+
+        // Ruch gwiazd
+        Iterator<Gwiazda> gwiazdaIterator = gwiazdy.iterator();
+        while (gwiazdaIterator.hasNext()) {
+            Gwiazda gwiazda = gwiazdaIterator.next();
+            gwiazda.rusz(predkoscGry);
+            if (gwiazda.getY() > WYSOKOSC) {
+                gwiazdaIterator.remove();
+            }
+        }
+
+
         Iterator<Kosmita> enemyIterator = enemies.iterator();
         while (enemyIterator.hasNext()) {
             Kosmita kosmita = enemyIterator.next();
-            kosmita.rusz();
+            kosmita.rusz(predkoscGry);
 
             Iterator<Pocisk> pociskIterator = pociski.iterator();
             while (pociskIterator.hasNext()) {
@@ -175,11 +221,11 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
             }
         }
 
-        // Obsługa ruchu komet
+
         Iterator<Kometa> kometaIterator = komety.iterator();
         while (kometaIterator.hasNext()) {
             Kometa kometa = kometaIterator.next();
-            kometa.rusz();
+            kometa.rusz(predkoscGry);
 
             if (kometa.getBounds().intersects(statek.getBounds())) {
                 graTrwa = false;
@@ -194,8 +240,6 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         repaint();
     }
 
-
-
     private void spawnEnemy() {
         int x = (int) (Math.random() * (SZEROKOSC - Kosmita.SZEROKOSC));
         enemies.add(new Kosmita(x, 0));
@@ -204,6 +248,11 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
     private void spawnKometa() {
         int x = (int) (Math.random() * (SZEROKOSC - Kometa.SZEROKOSC));
         komety.add(new Kometa(x, 0));
+    }
+
+    private void spawnGwiazda() {
+        int x = (int) (Math.random() * SZEROKOSC);
+        gwiazdy.add(new Gwiazda(x, 0));
     }
 
     @Override
@@ -235,6 +284,7 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
     }
 }
 
+
 class Kometa {
     public static final int SZEROKOSC = 50, WYSOKOSC = 50;
     private int x, y;
@@ -246,8 +296,8 @@ class Kometa {
         this.y = y;
     }
 
-    public void rusz() {
-        y += PREDKOSC;
+    public void rusz(double predkoscGry) {
+        y += PREDKOSC * predkoscGry;
     }
 
     public void rysuj(Graphics g) {
@@ -348,8 +398,8 @@ class Kosmita {
         this.y = y;
     }
 
-    public void rusz() {
-        y += PREDKOSC;
+    public void rusz(double predkoscGry) {
+        y += PREDKOSC * predkoscGry;
     }
 
     public void rysuj(Graphics g) {
@@ -359,6 +409,31 @@ class Kosmita {
 
     public Rectangle getBounds() {
         return new Rectangle(x, y, SZEROKOSC, WYSOKOSC);
+    }
+
+    public int getY() {
+        return y;
+    }
+}
+
+class Gwiazda {
+    private int x, y;
+    private final int ROZMIAR = 2;
+    private final int PREDKOSC = 1;
+    private final Color KOLOR = Color.WHITE;
+
+    public Gwiazda(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public void rusz(double predkoscGry) {
+        y += PREDKOSC * predkoscGry;
+    }
+
+    public void rysuj(Graphics g) {
+        g.setColor(KOLOR);
+        g.fillRect(x, y, ROZMIAR, ROZMIAR);
     }
 
     public int getY() {
