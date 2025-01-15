@@ -1,10 +1,9 @@
 package com.company;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+public class GameMarcinStart {
 
-public class GameMarcinStart extends JFrame {
-
+    public void startGame() {
+        Game game = new GameWordle(6); // 6 prób na zgadnięcie
+        game.startGame();
+    }
 }

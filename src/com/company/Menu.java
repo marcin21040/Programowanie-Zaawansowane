@@ -51,9 +51,9 @@ public class Menu extends JFrame implements ActionListener {
             gameMateusz.rozpocznijGre();
             JOptionPane.showMessageDialog(this, "Nowa gra rozpoczęta!");
         } else if (e.getSource() == newGameButton_Marcina) {
-            GameMarcinStart gameMarcin = new GameMarcinStart();
-            //gameMarcin.startGame();
-            JOptionPane.showMessageDialog(this, "Nowa gra rozpoczęta!");
+            WordleGameUI gameMarcin = new WordleGameUI();
+            gameMarcin.setVisible(true);  // Otwiera okno z grą Wordle
+            JOptionPane.showMessageDialog(this, "Nowa gra Marcina rozpoczęta!");
         }
     }
 
