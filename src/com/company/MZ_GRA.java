@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.io.*;
 
 public class MZ_GRA {
 
@@ -12,6 +13,28 @@ public class MZ_GRA {
         SwingUtilities.invokeLater(RamkaGry::new);
     }
 }
+
+
+class HighScoreManager {
+    private static final String FILE_NAME = "highscore.txt";
+
+    public static int wczytajHighScore() {
+        try (BufferedReader br = new BufferedReader(new FileReader(FILE_NAME))) {
+            String line = br.readLine();
+            return line != null ? Integer.parseInt(line) : 0;
+        } catch (IOException | NumberFormatException e) {
+            return 0;
+        }
+    }
+    public static void zapiszHighScore(int score) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(FILE_NAME))) {
+            bw.write(String.valueOf(score));
+        } catch (IOException e) {
+            e.printStackTrace(); //
+        }
+    }
+}
+
 
 class RamkaGry extends JFrame {
     public RamkaGry() {
@@ -38,6 +61,7 @@ class PanelPunktow extends JPanel {
     private JLabel punktyLabel;
     private JLabel predkoscLabel;
     private PanelGry panelGry;
+    private JLabel highScoreLabel;
 
     public PanelPunktow(PanelGry panelGry) {
         this.panelGry = panelGry;
@@ -55,11 +79,42 @@ class PanelPunktow extends JPanel {
         punktyLabel.setFont(new Font("Arial", Font.BOLD, 20));
         add(punktyLabel, gbc);
 
-        gbc.gridy = 1; // Pozycja poniżej punktów
+        gbc.gridy = 1;
         predkoscLabel = new JLabel("Prędkość: 1.0");
         predkoscLabel.setForeground(Color.WHITE);
         predkoscLabel.setFont(new Font("Arial", Font.BOLD, 20));
         add(predkoscLabel, gbc);
+
+        gbc.gridy = 2;
+
+        // Wczytaj najwyższy wynik z pliku
+        int zapisanyHighScore = wczytajHighScoreZPliku();
+        highScoreLabel = new JLabel("High Score: " + zapisanyHighScore);
+        highScoreLabel.setForeground(Color.WHITE);
+        highScoreLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        add(highScoreLabel, gbc);
+    }
+
+    private int wczytajHighScoreZPliku() {
+        try {
+            java.io.File file = new java.io.File("highscore.txt");
+            if (file.exists()) {
+                java.util.Scanner scanner = new java.util.Scanner(file);
+                if (scanner.hasNextInt()) {
+                    return scanner.nextInt(); // Odczytaj najwyższy wynik z pliku
+                }
+                scanner.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0; // Jeśli plik nie istnieje lub jest pusty, zwróć 0
+    }
+
+
+    public void aktualizujHighScore(int highScore) {
+        highScoreLabel.setText("High Score: " + highScore);
+        repaint();
     }
 
     public void aktualizujPunkty(int punkty) {
@@ -68,7 +123,8 @@ class PanelPunktow extends JPanel {
     }
 
     public void aktualizujPredkosc(double predkosc) {
-        predkoscLabel.setText(String.format("Prędkość: %.1f", predkosc));
+        int predkoscInt = (int)(predkosc * 10) - 10 ;
+        predkoscLabel.setText("Prędkość: " + predkoscInt);
         repaint();
     }
 }
@@ -80,7 +136,9 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
     private final int CZESTOTLIWOSC_WROGOW = 100;
     private final int CZESTOTLIWOSC_KOMET = 200;
     private final int CZESTOTLIWOSC_GWIAZD = 20;
+    private int highScore;
     private int punkty = 0;
+    private Timer punktowyZegar;
     private PanelPunktow panelPunktow;
 
     private Timer zegar;
@@ -106,9 +164,38 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         enemies = new ArrayList<>();
         komety = new ArrayList<>();
         gwiazdy = new ArrayList<>();
+        highScore = HighScoreManager.wczytajHighScore();
+        if (punkty > highScore) {
+            highScore = punkty;
+            if (panelPunktow != null) {
+                panelPunktow.aktualizujHighScore(highScore);
+            }
+        }
 
         zegar = new Timer(OPOZNIENIE, this);
         zegar.start();
+
+
+        punktowyZegar = new Timer(500, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (graTrwa) {
+                    punkty += 1;
+                    if (panelPunktow != null) {
+                        panelPunktow.aktualizujPunkty(punkty);
+                    }
+
+                    if (punkty > highScore) {
+                        highScore = punkty;
+                        if (panelPunktow != null) {
+                            panelPunktow.aktualizujHighScore(highScore);
+                        }
+                    }
+                }
+            }
+        });
+        punktowyZegar.start();
+
     }
 
     @Override
@@ -134,6 +221,7 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
             g.setColor(Color.GREEN);
             g.setFont(new Font("Arial", Font.BOLD, 36));
             g.drawString("KONIEC GRY!", SZEROKOSC / 2 - 100, WYSOKOSC / 2);
+            g.drawString("Najlepszy wynik: " + highScore, SZEROKOSC / 2 - 150, WYSOKOSC / 2 + 50);
         }
     }
 
@@ -202,10 +290,18 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
                     enemyIterator.remove();
                     pociskIterator.remove();
 
-                    punkty += 10;
+                    punkty += 10; // Dodanie punktów
                     if (panelPunktow != null) {
                         panelPunktow.aktualizujPunkty(punkty);
                         panelPunktow.repaint();
+                    }
+
+                    // Sprawdź i zaktualizuj najwyższy wynik
+                    if (punkty > highScore) {
+                        highScore = punkty;
+                        if (panelPunktow != null) {
+                            panelPunktow.aktualizujHighScore(highScore);
+                        }
                     }
                     break;
                 }
@@ -235,6 +331,15 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
             if (kometa.getY() > WYSOKOSC) {
                 kometaIterator.remove();
             }
+        }
+
+        if (!graTrwa) {
+            if (punkty > highScore) {
+                highScore = punkty;
+                HighScoreManager.zapiszHighScore(highScore);
+            }
+            repaint();
+            return;
         }
 
         repaint();
