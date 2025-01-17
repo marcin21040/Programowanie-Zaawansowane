@@ -163,6 +163,7 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         addKeyListener(this);
 
         bonusy = new ArrayList<>();
+
         statek = new Statek(SZEROKOSC / 2 - 25, WYSOKOSC - 80);
         pociski = new ArrayList<>();
         enemies = new ArrayList<>();
