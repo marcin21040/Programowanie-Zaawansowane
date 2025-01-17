@@ -152,6 +152,9 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
     private int gwiazdaSpawnCounter = 0;
     private boolean graTrwa = true;
     private double predkoscGry = 1.0;
+    private ArrayList<Bonus> bonusy;
+    private final int CZESTOTLIWOSC_BONUSOW = 270;
+    private int bonusSpawnCounter = 0;
 
     public PanelGry() {
         setPreferredSize(new Dimension(SZEROKOSC, WYSOKOSC));
@@ -159,6 +162,7 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         setFocusable(true);
         addKeyListener(this);
 
+        bonusy = new ArrayList<>();
         statek = new Statek(SZEROKOSC / 2 - 25, WYSOKOSC - 80);
         pociski = new ArrayList<>();
         enemies = new ArrayList<>();
@@ -203,6 +207,10 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         super.paintComponent(g);
         if (graTrwa) {
 
+            for (Bonus bonus : bonusy) {
+                bonus.rysuj(g);
+            }
+
             for (Gwiazda gwiazda : gwiazdy) {
                 gwiazda.rysuj(g);
             }
@@ -229,9 +237,39 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         this.panelPunktow = panelPunktow;
     }
 
+    private void spawnBonus() {
+        int x = (int) (Math.random() * (SZEROKOSC - Bonus.ROZMIAR));
+        bonusy.add(new Bonus(x, 0));
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         if (!graTrwa) return;
+
+        bonusSpawnCounter++;
+        if (bonusSpawnCounter >= CZESTOTLIWOSC_BONUSOW) {
+            spawnBonus();
+            bonusSpawnCounter = 0;
+        }
+
+        // Ruch i obsługa bonusów
+        Iterator<Bonus> bonusIterator = bonusy.iterator();
+        while (bonusIterator.hasNext()) {
+            Bonus bonus = bonusIterator.next();
+            bonus.rusz(predkoscGry);
+
+            if (bonus.getBounds().intersects(statek.getBounds())) {
+                // Gracz zebrał bonus
+                punkty += 5;
+                if (panelPunktow != null) {
+                    panelPunktow.aktualizujPunkty(punkty);
+                }
+                bonusIterator.remove();
+            } else if (bonus.getY() > WYSOKOSC) {
+                // Bonus wyszedł poza ekran
+                bonusIterator.remove();
+            }
+        }
 
         statek.rusz();
 
@@ -539,6 +577,35 @@ class Gwiazda {
     public void rysuj(Graphics g) {
         g.setColor(KOLOR);
         g.fillRect(x, y, ROZMIAR, ROZMIAR);
+    }
+
+    public int getY() {
+        return y;
+    }
+}
+
+class Bonus {
+    public static final int ROZMIAR = 20;
+    private int x, y;
+    private final int PREDKOSC = 2;
+    private final Color KOLOR = Color.YELLOW;
+
+    public Bonus(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public void rusz(double predkoscGry) {
+        y += PREDKOSC * predkoscGry;
+    }
+
+    public void rysuj(Graphics g) {
+        g.setColor(KOLOR);
+        g.fillRect(x, y, ROZMIAR, ROZMIAR);
+    }
+
+    public Rectangle getBounds() {
+        return new Rectangle(x, y, ROZMIAR, ROZMIAR);
     }
 
     public int getY() {
