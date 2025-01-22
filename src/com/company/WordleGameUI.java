@@ -11,13 +11,23 @@ public class WordleGameUI extends JFrame implements ActionListener {
     private final JButton enterButton, deleteButton;
     private String currentGuess = "";
     private int currentRow = 0;
-    private final String correctWord = "CRANE"; // Przykładowe hasło do zgadnięcia
+    private String correctWord = ""; // Wylosowane słowo
 
     public WordleGameUI() {
         setTitle("Wordle");
         setSize(500, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+
+        // Losowanie słowa o 5 literach z API Datamuse
+        try {
+            correctWord = DatamuseAPIClient.getRandomWord();
+        } catch (Exception e) {
+            e.printStackTrace();
+            correctWord = "CRANE"; // Fallback, jeśli coś pójdzie nie tak
+        }
+
+        System.out.println("Wylosowane słowo: " + correctWord); // Dla celów testowych, wypisz wylosowane słowo
 
         // Tworzymy panel planszy
         JPanel gridPanel = new JPanel(new GridLayout(6, 5, 5, 5));
