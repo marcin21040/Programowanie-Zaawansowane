@@ -19,6 +19,10 @@ public class WordleGameUI extends JFrame implements ActionListener {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
+        // Dodajemy margines do okna
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Marginesy na około
+
         // Tworzymy panel planszy
         JPanel gridPanel = new JPanel(new GridLayout(6, 5, 5, 5));
         grid = new JTextField[6][5];
@@ -29,10 +33,11 @@ public class WordleGameUI extends JFrame implements ActionListener {
                 grid[i][j].setHorizontalAlignment(JTextField.CENTER);
                 grid[i][j].setFont(new Font("Arial", Font.BOLD, 24));
                 grid[i][j].setBackground(Color.WHITE);
+                grid[i][j].setBorder(BorderFactory.createLineBorder(Color.GRAY, 2)); // Ramki wokół liter
                 gridPanel.add(grid[i][j]);
             }
         }
-        add(gridPanel, BorderLayout.CENTER);
+        mainPanel.add(gridPanel, BorderLayout.CENTER);
 
         // Tworzymy panel klawiatury
         JPanel keyboardPanel = new JPanel();
@@ -46,31 +51,44 @@ public class WordleGameUI extends JFrame implements ActionListener {
 
         keyboardButtons = new JButton[keys.length];
         for (int i = 0; i < keys.length; i++) {
-            keyboardButtons[i] = new JButton(keys[i]); // Ustawiamy literę na przycisku
-            keyboardButtons[i].setPreferredSize(new Dimension(50, 50)); // Rozmiar przycisków
-            keyboardButtons[i].setFont(new Font("Arial", Font.BOLD, 18)); // Rozmiar czcionki
-            keyboardButtons[i].setMargin(new Insets(0, 0, 0, 0)); // Ustawienie marginesu na 0
+            keyboardButtons[i] = new JButton(keys[i]);
+            keyboardButtons[i].setPreferredSize(new Dimension(50, 50));
+            keyboardButtons[i].setFont(new Font("Arial", Font.BOLD, 18));
+            keyboardButtons[i].setBackground(new Color(230, 230, 230)); // Jasne tło przycisków
+            keyboardButtons[i].setForeground(Color.BLACK); // Kolor tekstu
+            keyboardButtons[i].setFocusPainted(false); // Usunięcie efektu kliknięcia
+            keyboardButtons[i].setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2)); // Ramki przycisków
             keyboardButtons[i].addActionListener(this);
             keyboardPanel.add(keyboardButtons[i]);
         }
 
         // Przycisk "Enter"
         enterButton = new JButton("ENTER");
-        enterButton.setPreferredSize(new Dimension(100, 50)); // Większy przycisk
-        enterButton.setFont(new Font("Arial", Font.BOLD, 18)); // Rozmiar czcionki
-        enterButton.setMargin(new Insets(0, 0, 0, 0)); // Ustawienie marginesu na 0
+        enterButton.setPreferredSize(new Dimension(100, 50));
+        enterButton.setFont(new Font("Arial", Font.BOLD, 18));
+        enterButton.setBackground(new Color(59, 89, 182)); // Ciemnoniebieski kolor
+        enterButton.setForeground(Color.WHITE); // Biały tekst
+        enterButton.setFocusPainted(false);
+        enterButton.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
         enterButton.addActionListener(this);
         keyboardPanel.add(enterButton);
 
         // Przycisk "Delete"
         deleteButton = new JButton("DELETE");
-        deleteButton.setPreferredSize(new Dimension(100, 50)); // Większy przycisk
-        deleteButton.setFont(new Font("Arial", Font.BOLD, 18)); // Rozmiar czcionki
-        deleteButton.setMargin(new Insets(0, 0, 0, 0)); // Ustawienie marginesu na 0
+        deleteButton.setPreferredSize(new Dimension(100, 50));
+        deleteButton.setFont(new Font("Arial", Font.BOLD, 18));
+        deleteButton.setBackground(new Color(192, 57, 43)); // Czerwony kolor
+        deleteButton.setForeground(Color.WHITE);
+        deleteButton.setFocusPainted(false);
+        deleteButton.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
         deleteButton.addActionListener(this);
         keyboardPanel.add(deleteButton);
 
-        add(keyboardPanel, BorderLayout.SOUTH);
+        // Dodajemy klawiaturę do głównego panelu
+        mainPanel.add(keyboardPanel, BorderLayout.SOUTH);
+
+        // Dodajemy główny panel do okna
+        add(mainPanel);
 
         // Pobranie hasła z API na start gry
         try {
