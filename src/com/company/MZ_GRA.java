@@ -463,12 +463,20 @@ class Kometa {
 
 class Statek {
     private int x, y, dx;
-    private final int SZEROKOSC = 50, WYSOKOSC = 50;
-    private final Color KOLOR = Color.BLUE;
+    private final int SZEROKOSC = 50, WYSOKOSC = 50; // Rozmiar można dostosować do rozmiaru obrazka.
+    private Image rakietaObraz;
 
     public Statek(int x, int y) {
         this.x = x;
         this.y = y;
+
+        // Załaduj obrazek rakiety
+        try {
+            rakietaObraz = new ImageIcon("textures/rakieta.png").getImage();
+        } catch (Exception e) {
+            e.printStackTrace();
+            rakietaObraz = null; // W razie problemów obrazek będzie pusty
+        }
     }
 
     public void rusz() {
@@ -482,8 +490,12 @@ class Statek {
     }
 
     public void rysuj(Graphics g) {
-        g.setColor(KOLOR);
-        g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
+        if (rakietaObraz != null) {
+            g.drawImage(rakietaObraz, x, y, SZEROKOSC, WYSOKOSC, null); // Rysuj obrazek rakiety
+        } else {
+            g.setColor(Color.BLUE); // W razie problemów rysuj prostokąt
+            g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
+        }
     }
 
     public Rectangle getBounds() {
@@ -501,8 +513,8 @@ class Statek {
     public int getSzerokosc() {
         return SZEROKOSC;
     }
-
 }
+
 
 class Pocisk {
     private int x, y;
