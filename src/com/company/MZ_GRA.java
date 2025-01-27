@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.io.*;
 
+
+
 public class MZ_GRA {
 
     public void rozpocznijGre() {
@@ -16,24 +18,25 @@ public class MZ_GRA {
 
 
 class HighScoreManager {
-    private static final String FILE_NAME = "highscore.txt";
+    private static final String HIGHSCORE_FILE = "highscore.txt";
 
-    public static int wczytajHighScore() {
-        try (BufferedReader br = new BufferedReader(new FileReader(FILE_NAME))) {
-            String line = br.readLine();
-            return line != null ? Integer.parseInt(line) : 0;
+    public static int odczytajHighScore() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(HIGHSCORE_FILE))) {
+            return Integer.parseInt(reader.readLine());
         } catch (IOException | NumberFormatException e) {
             return 0;
         }
     }
-    public static void zapiszHighScore(int score) {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(FILE_NAME))) {
-            bw.write(String.valueOf(score));
+
+    public static void zapiszHighScore(int highScore) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(HIGHSCORE_FILE))) {
+            writer.write(String.valueOf(highScore));
         } catch (IOException e) {
-            e.printStackTrace(); //
+            e.printStackTrace();
         }
     }
 }
+
 
 
 class RamkaGry extends JFrame {
@@ -169,7 +172,7 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         enemies = new ArrayList<>();
         komety = new ArrayList<>();
         gwiazdy = new ArrayList<>();
-        highScore = HighScoreManager.wczytajHighScore();
+        highScore = HighScoreManager.odczytajHighScore();
         if (punkty > highScore) {
             highScore = punkty;
             if (panelPunktow != null) {
@@ -195,6 +198,7 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
                         if (panelPunktow != null) {
                             panelPunktow.aktualizujHighScore(highScore);
                         }
+                        HighScoreManager.zapiszHighScore(highScore);
                     }
                 }
             }
@@ -329,13 +333,12 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
                     enemyIterator.remove();
                     pociskIterator.remove();
 
-                    punkty += 10; // Dodanie punktów
+                    punkty += 10;
                     if (panelPunktow != null) {
                         panelPunktow.aktualizujPunkty(punkty);
                         panelPunktow.repaint();
                     }
 
-                    // Sprawdź i zaktualizuj najwyższy wynik
                     if (punkty > highScore) {
                         highScore = punkty;
                         if (panelPunktow != null) {
@@ -433,7 +436,7 @@ class Kometa {
     public static final int SZEROKOSC = 50, WYSOKOSC = 50;
     private int x, y;
     private final int PREDKOSC = 3;
-    private final Color KOLOR = Color.GRAY;
+    private static final Image KOMETA_OBRAZ = new ImageIcon("textures/kamien.png").getImage();
 
     public Kometa(int x, int y) {
         this.x = x;
@@ -445,8 +448,7 @@ class Kometa {
     }
 
     public void rysuj(Graphics g) {
-        g.setColor(KOLOR);
-        g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
+        g.drawImage(KOMETA_OBRAZ, x, y, SZEROKOSC, WYSOKOSC, null);
     }
 
     public Rectangle getBounds() {
@@ -459,14 +461,23 @@ class Kometa {
 }
 
 
+
 class Statek {
     private int x, y, dx;
     private final int SZEROKOSC = 50, WYSOKOSC = 50;
-    private final Color KOLOR = Color.BLUE;
+    private Image rakietaObraz;
 
     public Statek(int x, int y) {
         this.x = x;
         this.y = y;
+
+        // Załaduj obrazek rakiety
+        try {
+            rakietaObraz = new ImageIcon("textures/rakieta.png").getImage();
+        } catch (Exception e) {
+            e.printStackTrace();
+            rakietaObraz = null;
+        }
     }
 
     public void rusz() {
@@ -480,8 +491,12 @@ class Statek {
     }
 
     public void rysuj(Graphics g) {
-        g.setColor(KOLOR);
-        g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
+        if (rakietaObraz != null) {
+            g.drawImage(rakietaObraz, x, y, SZEROKOSC, WYSOKOSC, null);
+        } else {
+            g.setColor(Color.BLUE);
+            g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
+        }
     }
 
     public Rectangle getBounds() {
@@ -499,8 +514,8 @@ class Statek {
     public int getSzerokosc() {
         return SZEROKOSC;
     }
-
 }
+
 
 class Pocisk {
     private int x, y;
@@ -535,7 +550,7 @@ class Kosmita {
     public static final int SZEROKOSC = 40, WYSOKOSC = 40;
     private int x, y;
     private final int PREDKOSC = 2;
-    private final Color KOLOR = Color.GREEN;
+    private static final Image KOSMITA_OBRAZ = new ImageIcon("textures/kosmita.png").getImage();
 
     public Kosmita(int x, int y) {
         this.x = x;
@@ -547,8 +562,7 @@ class Kosmita {
     }
 
     public void rysuj(Graphics g) {
-        g.setColor(KOLOR);
-        g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
+        g.drawImage(KOSMITA_OBRAZ, x, y, SZEROKOSC, WYSOKOSC, null);
     }
 
     public Rectangle getBounds() {
@@ -585,11 +599,12 @@ class Gwiazda {
     }
 }
 
+
 class Bonus {
     public static final int ROZMIAR = 20;
     private int x, y;
     private final int PREDKOSC = 2;
-    private final Color KOLOR = Color.YELLOW;
+    private static final Image BONUS_OBRAZ = new ImageIcon("textures/moneta.png").getImage();
 
     public Bonus(int x, int y) {
         this.x = x;
@@ -601,8 +616,7 @@ class Bonus {
     }
 
     public void rysuj(Graphics g) {
-        g.setColor(KOLOR);
-        g.fillRect(x, y, ROZMIAR, ROZMIAR);
+        g.drawImage(BONUS_OBRAZ, x, y, ROZMIAR, ROZMIAR, null);
     }
 
     public Rectangle getBounds() {
@@ -613,3 +627,4 @@ class Bonus {
         return y;
     }
 }
+
