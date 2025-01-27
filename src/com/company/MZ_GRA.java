@@ -331,13 +331,12 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
                     enemyIterator.remove();
                     pociskIterator.remove();
 
-                    punkty += 10; // Dodanie punktów
+                    punkty += 10;
                     if (panelPunktow != null) {
                         panelPunktow.aktualizujPunkty(punkty);
                         panelPunktow.repaint();
                     }
 
-                    // Sprawdź i zaktualizuj najwyższy wynik
                     if (punkty > highScore) {
                         highScore = punkty;
                         if (panelPunktow != null) {
@@ -435,7 +434,7 @@ class Kometa {
     public static final int SZEROKOSC = 50, WYSOKOSC = 50;
     private int x, y;
     private final int PREDKOSC = 3;
-    private final Color KOLOR = Color.GRAY;
+    private static final Image KOMETA_OBRAZ = new ImageIcon("textures/kamien.png").getImage();
 
     public Kometa(int x, int y) {
         this.x = x;
@@ -447,8 +446,7 @@ class Kometa {
     }
 
     public void rysuj(Graphics g) {
-        g.setColor(KOLOR);
-        g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
+        g.drawImage(KOMETA_OBRAZ, x, y, SZEROKOSC, WYSOKOSC, null);
     }
 
     public Rectangle getBounds() {
@@ -461,9 +459,10 @@ class Kometa {
 }
 
 
+
 class Statek {
     private int x, y, dx;
-    private final int SZEROKOSC = 50, WYSOKOSC = 50; // Rozmiar można dostosować do rozmiaru obrazka.
+    private final int SZEROKOSC = 50, WYSOKOSC = 50;
     private Image rakietaObraz;
 
     public Statek(int x, int y) {
@@ -475,7 +474,7 @@ class Statek {
             rakietaObraz = new ImageIcon("textures/rakieta.png").getImage();
         } catch (Exception e) {
             e.printStackTrace();
-            rakietaObraz = null; // W razie problemów obrazek będzie pusty
+            rakietaObraz = null;
         }
     }
 
@@ -491,9 +490,9 @@ class Statek {
 
     public void rysuj(Graphics g) {
         if (rakietaObraz != null) {
-            g.drawImage(rakietaObraz, x, y, SZEROKOSC, WYSOKOSC, null); // Rysuj obrazek rakiety
+            g.drawImage(rakietaObraz, x, y, SZEROKOSC, WYSOKOSC, null);
         } else {
-            g.setColor(Color.BLUE); // W razie problemów rysuj prostokąt
+            g.setColor(Color.BLUE);
             g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
         }
     }
@@ -549,7 +548,7 @@ class Kosmita {
     public static final int SZEROKOSC = 40, WYSOKOSC = 40;
     private int x, y;
     private final int PREDKOSC = 2;
-    private final Color KOLOR = Color.GREEN;
+    private static final Image KOSMITA_OBRAZ = new ImageIcon("textures/kosmita.png").getImage();
 
     public Kosmita(int x, int y) {
         this.x = x;
@@ -561,8 +560,7 @@ class Kosmita {
     }
 
     public void rysuj(Graphics g) {
-        g.setColor(KOLOR);
-        g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
+        g.drawImage(KOSMITA_OBRAZ, x, y, SZEROKOSC, WYSOKOSC, null);
     }
 
     public Rectangle getBounds() {
@@ -599,11 +597,12 @@ class Gwiazda {
     }
 }
 
+
 class Bonus {
     public static final int ROZMIAR = 20;
     private int x, y;
     private final int PREDKOSC = 2;
-    private final Color KOLOR = Color.YELLOW;
+    private static final Image BONUS_OBRAZ = new ImageIcon("textures/moneta.png").getImage();
 
     public Bonus(int x, int y) {
         this.x = x;
@@ -615,8 +614,7 @@ class Bonus {
     }
 
     public void rysuj(Graphics g) {
-        g.setColor(KOLOR);
-        g.fillRect(x, y, ROZMIAR, ROZMIAR);
+        g.drawImage(BONUS_OBRAZ, x, y, ROZMIAR, ROZMIAR, null);
     }
 
     public Rectangle getBounds() {
@@ -627,3 +625,4 @@ class Bonus {
         return y;
     }
 }
+
