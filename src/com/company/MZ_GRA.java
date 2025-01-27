@@ -16,24 +16,25 @@ public class MZ_GRA {
 
 
 class HighScoreManager {
-    private static final String FILE_NAME = "highscore.txt";
+    private static final String HIGHSCORE_FILE = "highscore.txt";
 
-    public static int wczytajHighScore() {
-        try (BufferedReader br = new BufferedReader(new FileReader(FILE_NAME))) {
-            String line = br.readLine();
-            return line != null ? Integer.parseInt(line) : 0;
+    public static int odczytajHighScore() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(HIGHSCORE_FILE))) {
+            return Integer.parseInt(reader.readLine());
         } catch (IOException | NumberFormatException e) {
             return 0;
         }
     }
-    public static void zapiszHighScore(int score) {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(FILE_NAME))) {
-            bw.write(String.valueOf(score));
+
+    public static void zapiszHighScore(int highScore) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(HIGHSCORE_FILE))) {
+            writer.write(String.valueOf(highScore));
         } catch (IOException e) {
-            e.printStackTrace(); //
+            e.printStackTrace();
         }
     }
 }
+
 
 
 class RamkaGry extends JFrame {
@@ -169,7 +170,7 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         enemies = new ArrayList<>();
         komety = new ArrayList<>();
         gwiazdy = new ArrayList<>();
-        highScore = HighScoreManager.wczytajHighScore();
+        highScore = HighScoreManager.odczytajHighScore();
         if (punkty > highScore) {
             highScore = punkty;
             if (panelPunktow != null) {
@@ -195,6 +196,7 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
                         if (panelPunktow != null) {
                             panelPunktow.aktualizujHighScore(highScore);
                         }
+                        HighScoreManager.zapiszHighScore(highScore);
                     }
                 }
             }
