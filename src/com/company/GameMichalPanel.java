@@ -17,6 +17,10 @@ public class GameMichalPanel extends JPanel {
 
     // Ścieżka (waypointy) dla wrogów
     private List<Point> enemyPath;
+    private MichalBoard board;
+
+    // --- Rozmiary planszy ---
+    private int tileSize = 90;
 
     // Główny Timer gry
     private Timer gameTimer;
@@ -43,13 +47,15 @@ public class GameMichalPanel extends JPanel {
     private boolean gameOver = false;
 
     public GameMichalPanel() {
-        setPreferredSize(new Dimension(800, 600));
 
-        enemyPath = new ArrayList<>();
-        enemyPath.add(new Point(50, 100));
-        enemyPath.add(new Point(200, 100));
-        enemyPath.add(new Point(200, 300));
-        enemyPath.add(new Point(600, 300));
+        // Tworzymy planszę:
+        board = new MichalBoard();
+
+        // Rozmiar panelu = cols * tileSize, rows * tileSize
+        setPreferredSize(new Dimension(board.getCols() * tileSize, board.getRows() * tileSize));
+
+
+        enemyPath = board.getWaypoints();
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -71,9 +77,18 @@ public class GameMichalPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // Tło
-        g.setColor(Color.LIGHT_GRAY);
-        g.fillRect(0, 0, getWidth(), getHeight());
+        // Rysujemy kafelki
+        for (int r = 0; r < board.getRows(); r++) {
+            for (int c = 0; c < board.getCols(); c++) {
+                int tile = board.getTile(r, c);
+                if (board.getTile(r, c) == 0) {
+                    g.setColor(Color.GREEN);  // ścieżka
+                } else {
+                    g.setColor(Color.GRAY);   // blokada
+                }
+                g.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+            }
+        }
 
         // Wrogowie
         for (MichalEnemy enemy : enemies) {
