@@ -51,4 +51,26 @@ public class DatamuseAPIClient {
 
         throw new Exception("Brak wyników z API");
     }
+
+    public static boolean isValidWord(String word) throws Exception {
+        URL url = new URL(API_URL + word.toLowerCase() + "&max=1"); // Sprawdzamy, czy istnieje
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        StringBuilder content = new StringBuilder();
+        String inputLine;
+
+        while ((inputLine = in.readLine()) != null) {
+            content.append(inputLine);
+        }
+
+        in.close();
+        connection.disconnect();
+
+        String response = content.toString();
+        System.out.println("Response from API for word '" + word + "': " + response);
+        // Jeśli otrzymujemy odpowiedź, to znaczy, że słowo istnieje
+        return !response.equals("[]"); // Jeśli odpowiedź nie jest pusta, to słowo istnieje
+    }
 }

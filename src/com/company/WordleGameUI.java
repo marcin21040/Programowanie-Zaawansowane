@@ -117,10 +117,20 @@ public class WordleGameUI extends JFrame implements ActionListener, KeyListener 
 
         if (clickedButton == enterButton) {
             if (currentGuess.length() == 5) {
-                // Sprawdzamy hasło
-                checkWord(currentGuess);
-                currentGuess = "";
-                currentRow++;
+                try {
+                    // Sprawdzamy, czy słowo istnieje w API
+                    if (DatamuseAPIClient.isValidWord(currentGuess)) {
+                        // Sprawdzamy hasło
+                        checkWord(currentGuess);
+                        currentGuess = "";
+                        currentRow++;
+                    } else {
+                        JOptionPane.showMessageDialog(this, "To słowo nie istnieje!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Błąd połączenia z API!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                }
             }
         } else if (clickedButton == deleteButton) {
             if (currentGuess.length() > 0) {
