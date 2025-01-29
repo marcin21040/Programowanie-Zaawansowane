@@ -29,6 +29,7 @@ public class MichalEnemy {
 
     // Wielkość wroga do rysowania
     private int size = 20;
+    private int tileSize = 90;
 
     // Efekt spowolnienia – ile jeszcze ms będzie trwał
     private long slowEffectEndTime = 0;
@@ -144,21 +145,22 @@ public class MichalEnemy {
             return;
         }
 
-        Point target = path.get(currentCheckpointIndex);
-        double dx = target.x - x;
-        double dy = target.y - y;
+        Point tile = path.get(currentCheckpointIndex);
+        double targetX = tile.x * tileSize + tileSize / 2.0;  // środek kafelka
+        double targetY = tile.y * tileSize + tileSize / 2.0;
+        double dx = targetX - x;
+        double dy = targetY - y;
         double dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < 1.0) {
-            // Doszliśmy do kolejnego punktu – przechodzimy do następnego
             currentCheckpointIndex++;
         } else {
-            // Idziemy w kierunku kolejnego punktu
             double stepX = (dx / dist) * currentSpeed;
             double stepY = (dy / dist) * currentSpeed;
             x += stepX;
             y += stepY;
         }
+
     }
 
     /**

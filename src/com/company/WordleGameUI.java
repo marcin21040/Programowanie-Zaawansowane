@@ -4,14 +4,19 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.util.HashMap;
+import java.util.Map;
 
-public class WordleGameUI extends JFrame implements ActionListener {
+public class WordleGameUI extends JFrame implements ActionListener, KeyListener {
     private final JTextField[][] grid;
     private final JButton[] keyboardButtons;
     private final JButton enterButton, deleteButton;
     private String currentGuess = "";
     private int currentRow = 0;
     private String correctWord; // Hasło do zgadnięcia pobierane z API
+    private final Map<String, JButton> keyButtonMap; // Mapa liter do przycisków
 
     public WordleGameUI() {
         setTitle("Wordle");
@@ -50,6 +55,8 @@ public class WordleGameUI extends JFrame implements ActionListener {
         };
 
         keyboardButtons = new JButton[keys.length];
+        keyButtonMap = new HashMap<>(); // Tworzymy mapę do przechowywania przycisków
+
         for (int i = 0; i < keys.length; i++) {
             keyboardButtons[i] = new JButton(keys[i]);
             keyboardButtons[i].setPreferredSize(new Dimension(50, 50));
@@ -60,6 +67,7 @@ public class WordleGameUI extends JFrame implements ActionListener {
             keyboardButtons[i].setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2)); // Ramki przycisków
             keyboardButtons[i].addActionListener(this);
             keyboardPanel.add(keyboardButtons[i]);
+            keyButtonMap.put(keys[i], keyboardButtons[i]); // Dodajemy do mapy literę i przycisk
         }
 
         // Przycisk "Enter"
@@ -90,6 +98,10 @@ public class WordleGameUI extends JFrame implements ActionListener {
         // Dodajemy główny panel do okna
         add(mainPanel);
 
+        // Dodajemy nasłuchiwanie klawiszy z klawiatury
+        addKeyListener(this);
+        setFocusable(true); // Ustawienie okna na fokus, aby odbierało zdarzenia z klawiatury
+
         // Pobranie hasła z API na start gry
         try {
             correctWord = DatamuseAPIClient.getRandomWord();
@@ -98,7 +110,6 @@ public class WordleGameUI extends JFrame implements ActionListener {
             correctWord = "CRANE"; // Fallback, jeśli coś pójdzie nie tak
         }
     }
-
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -125,6 +136,33 @@ public class WordleGameUI extends JFrame implements ActionListener {
         }
     }
 
+    @Override
+    public void keyTyped(KeyEvent e) {
+        char keyChar = e.getKeyChar();
+        if (Character.isLetter(keyChar) && currentGuess.length() < 5) {
+            keyChar = Character.toUpperCase(keyChar); // Upewnij się, że litery są wpisywane wielkimi literami
+            grid[currentRow][currentGuess.length()].setText(String.valueOf(keyChar));
+            currentGuess += keyChar;
+        } else if (keyChar == KeyEvent.VK_BACK_SPACE && currentGuess.length() > 0) {
+            currentGuess = currentGuess.substring(0, currentGuess.length() - 1);
+            grid[currentRow][currentGuess.length()].setText("");
+        }
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_ENTER && currentGuess.length() == 5) {
+            checkWord(currentGuess);
+            currentGuess = "";
+            currentRow++;
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+        // Pusta metoda (nie musimy jej obsługiwać, ale jest wymagana przez interfejs KeyListener)
+    }
+
     // Zaktualizowana metoda checkWord, aby obsługiwać wygraną i przegraną
     private void checkWord(String guess) {
         boolean isCorrect = true; // Flaga do sprawdzenia, czy zgadłeś poprawnie
@@ -133,58 +171,39 @@ public class WordleGameUI extends JFrame implements ActionListener {
             char guessedLetter = guess.charAt(i);
             char correctLetter = correctWord.charAt(i);
 
+            JButton correspondingButton = keyButtonMap.get(String.valueOf(guessedLetter).toUpperCase());
+
             if (guessedLetter == correctLetter) {
                 grid[currentRow][i].setBackground(Color.GREEN); // Zgadnięta litera na właściwym miejscu
-            } else if (correctWord.contains(String.valueOf(guessedLetter))) {
-                grid[currentRow][i].setBackground(Color.YELLOW); // Litera w słowie, ale na złym miejscu
-                isCorrect = false; // Przynajmniej jedna litera na złym miejscu
-            } else {
-                grid[currentRow][i].setBackground(Color.GRAY); // Litery nie ma w słowie
-                isCorrect = false; // Nie zgadłeś, litery nie ma
-            }
-        }
-
-        // Sprawdzenie wygranej
-        if (isCorrect) {
-            JOptionPane.showMessageDialog(this, "Gratulacje! Zgadłeś słowo: " + correctWord, "Wygrana", JOptionPane.INFORMATION_MESSAGE);
-            resetGame();
-        } else if (currentRow == 5) { // Jeśli to była ostatnia próba
-            JOptionPane.showMessageDialog(this, "Koniec gry! Prawidłowe słowo to: " + correctWord, "Przegrana", JOptionPane.INFORMATION_MESSAGE);
-            resetGame();
-        }
-    }
-
-    // Dodanie metody resetującej grę
-    private void resetGame() {
-        int option = JOptionPane.showConfirmDialog(this, "Czy chcesz zagrać ponownie?", "Nowa Gra", JOptionPane.YES_NO_OPTION);
-
-        if (option == JOptionPane.YES_OPTION) {
-            // Resetowanie stanu planszy i gry
-            for (int i = 0; i < 6; i++) {
-                for (int j = 0; j < 5; j++) {
-                    grid[i][j].setText("");
-                    grid[i][j].setBackground(Color.WHITE); // Resetowanie kolorów
+                if (correspondingButton != null) {
+                    correspondingButton.setBackground(Color.GREEN); // Zmieniamy kolor na zielony na przycisku klawiatury
                 }
+            } else if (correctWord.contains(String.valueOf(guessedLetter))) {
+                grid[currentRow][i].setBackground(Color.YELLOW); // Zgadnięta litera w złym miejscu
+                if (correspondingButton != null) {
+                    correspondingButton.setBackground(Color.YELLOW); // Zmieniamy kolor na żółty
+                }
+                isCorrect = false;
+            } else {
+                grid[currentRow][i].setBackground(Color.GRAY); // Zła litera
+                if (correspondingButton != null) {
+                    correspondingButton.setBackground(Color.GRAY); // Zmieniamy kolor na szary na klawiaturze
+                }
+                isCorrect = false;
             }
-            currentRow = 0;
-            currentGuess = "";
+        }
 
-            // Pobieramy nowe słowo z API
-            try {
-                correctWord = DatamuseAPIClient.getRandomWord();
-            } catch (Exception e) {
-                e.printStackTrace();
-                correctWord = "CRANE"; // Fallback, jeśli coś pójdzie nie tak
-            }
-        } else {
-            System.exit(0); // Wyjście z gry, jeśli użytkownik nie chce grać ponownie
+        if (isCorrect) {
+            JOptionPane.showMessageDialog(this, "Gratulacje! Zgadłeś słowo!", "Wygrana", JOptionPane.INFORMATION_MESSAGE);
+        } else if (currentRow == 5) {
+            JOptionPane.showMessageDialog(this, "Przegrałeś! Prawidłowe słowo to: " + correctWord, "Koniec gry", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            WordleGameUI gameUI = new WordleGameUI();
-            gameUI.setVisible(true);
+            WordleGameUI wordleGame = new WordleGameUI();
+            wordleGame.setVisible(true);
         });
     }
 }
