@@ -3,12 +3,7 @@ package com.company;
 import java.awt.*;
 import java.util.List;
 
-/**
- * Rozbudowany wróg typu "MichalEnemy".
- * - Porusza się po ustalonej ścieżce (lista punktów).
- * - Może być spowolniony na pewien czas (status effect).
- * - Ma pasek zdrowia i status alive/dead.
- */
+
 public class MichalEnemy {
     private double x;
     private double y;

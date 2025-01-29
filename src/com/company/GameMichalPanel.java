@@ -60,7 +60,14 @@ public class GameMichalPanel extends JPanel {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                placeTower(e.getX(), e.getY());
+                // lewy przycisk => BASIC
+                if (e.getButton() == MouseEvent.BUTTON1) {
+                    placeTower(e.getX(), e.getY(), TowerType.BASIC);
+                }
+                // prawy przycisk => SNIPER
+                else if (e.getButton() == MouseEvent.BUTTON3) {
+                    placeTower(e.getX(), e.getY(), TowerType.SNIPER);
+                }
             }
         });
 
@@ -207,10 +214,10 @@ public class GameMichalPanel extends JPanel {
         }
     }
 
-    private void placeTower(int x, int y) {
+    private void placeTower(int x, int y, TowerType towerType) {
         if (gameOver) return;
         if (money >= defaultTowerCost && towers.size() < towerLimit) {
-            towers.add(new MichalTower(x, y, defaultTowerCost));
+            towers.add(new MichalTower(x, y, towerType));
             money -= defaultTowerCost;
         } else {
             System.out.println("Nie możesz postawić wieży! Brak środków lub osiągnięto limit wież.");

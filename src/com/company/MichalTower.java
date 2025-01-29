@@ -5,9 +5,9 @@ import java.awt.*;
 public class MichalTower {
     private int x;
     private int y;
-    private int range = 100;       // zasięg wieży
-    private int damage = 25;       // obrażenia pocisku
-    private int cooldown = 1000;   // czas w ms pomiędzy strzałami
+    private int range;       // zasięg wieży
+    private int damage;       // obrażenia pocisku
+    private int cooldown;   // czas w ms pomiędzy strzałami
     private long lastShotTime = 0;
 
     // Wielkość wieży
@@ -16,10 +16,18 @@ public class MichalTower {
     // Koszt wieży (jeśli chcemy różne wieże, można wprowadzić różne koszty w konstruktorze)
     private int cost;
 
-    public MichalTower(int x, int y, int cost) {
+    private TowerType towerType;
+
+    public MichalTower(int x, int y, TowerType towerType) {
         this.x = x;
         this.y = y;
-        this.cost = cost;
+        this.towerType = towerType;
+
+        // Ustawiamy konkretne parametry z enum:
+        this.range = towerType.getRange();
+        this.damage = towerType.getDamage();
+        this.cooldown = towerType.getCooldown();
+        this.cost = towerType.getCost();
     }
 
     public void draw(Graphics g) {
@@ -31,11 +39,7 @@ public class MichalTower {
         g.drawOval(x - range, y - range, range * 2, range * 2);
     }
 
-    /**
-     * Próba strzału w wybranego wroga.
-     * Zwraca obiekt MichalProjectile, jeśli udało się strzelić (cooldown minął),
-     * lub null, jeśli jeszcze nie czas na kolejny strzał.
-     */
+    // Strzelanie do wroga
     public MichalProjectile shootAt(MichalEnemy enemy) {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastShotTime > cooldown) {
@@ -59,7 +63,19 @@ public class MichalTower {
         return range;
     }
 
+    public int getDamage() {
+        return damage;
+    }
+
+    public int getCooldown() {
+        return cooldown;
+    }
+
     public int getCost() {
         return cost;
+    }
+
+    public TowerType getTowerType() {
+        return towerType;
     }
 }
