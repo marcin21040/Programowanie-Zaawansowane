@@ -4,13 +4,23 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.io.*;
+import java.lang.annotation.*;
 
-
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@interface BonusItem {
+    String value();
+}
 
 public class MZ_GRA {
 
     public void rozpocznijGre() {
-        SwingUtilities.invokeLater(RamkaGry::new);
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new RamkaGry();
+            }
+        });
     }
 }
 
@@ -88,7 +98,6 @@ class PanelPunktow extends JPanel {
 
         gbc.gridy = 2;
 
-        // Wczytaj najwyższy wynik z pliku
         int zapisanyHighScore = wczytajHighScoreZPliku();
         highScoreLabel = new JLabel("High Score: " + zapisanyHighScore);
         highScoreLabel.setForeground(Color.WHITE);
@@ -102,14 +111,14 @@ class PanelPunktow extends JPanel {
             if (file.exists()) {
                 java.util.Scanner scanner = new java.util.Scanner(file);
                 if (scanner.hasNextInt()) {
-                    return scanner.nextInt(); // Odczytaj najwyższy wynik z pliku
+                    return scanner.nextInt();
                 }
                 scanner.close();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return 0; // Jeśli plik nie istnieje lub jest pusty, zwróć 0
+        return 0;
     }
 
 
@@ -130,25 +139,24 @@ class PanelPunktow extends JPanel {
     }
 }
 
+
 class PanelGry extends JPanel implements ActionListener, KeyListener {
+    private static final int SZEROKOSC = 800, WYSOKOSC = 600, OPOZNIENIE = 15;
+    private static final int[] CZESTOTLIWOSCI = {100, 200, 20, 270, 515}; // Kosmita, Kometa, Gwiazda, Bonus, Diament
 
-    private final int SZEROKOSC = 800;
-    private final int WYSOKOSC = 600;
-    private final int OPOZNIENIE = 15;
-    private final int CZESTOTLIWOSC_WROGOW = 100;
-    private final int CZESTOTLIWOSC_KOMET = 200;
-    private final int CZESTOTLIWOSC_GWIAZD = 20;
-    private final int CZESTOTLIWOSC_BONUSOW = 270;
-
-    private int punkty = 0;
-    private int highScore;
-    private Timer zegar, punktowyZegar;
-    private PanelPunktow panelPunktow;
+    private int punkty = 0, highScore;
     private boolean graTrwa = true;
     private double predkoscGry = 1.0;
     private Statek statek;
     private ArrayList<ObiektGry> obiektyGry = new ArrayList<>();
-    private int enemySpawnCounter = 0, kometaSpawnCounter = 0, gwiazdaSpawnCounter = 0, bonusSpawnCounter = 0;
+    private int[] spawnCounters = new int[CZESTOTLIWOSCI.length];
+
+    private String wyswietlanyKomunikat = "";
+    private int czasWyswietlaniaKomunikatu = 0;
+
+    private JButton przyciskWyjdz, przyciskRestart;
+    private Timer zegar, punktowyZegar;
+    private PanelPunktow panelPunktow;
 
     public PanelGry() {
         setPreferredSize(new Dimension(SZEROKOSC, WYSOKOSC));
@@ -162,14 +170,11 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         zegar = new Timer(OPOZNIENIE, this);
         zegar.start();
 
-        punktowyZegar = new Timer(500, e -> {
-            if (graTrwa) {
-                punkty++;
-                panelPunktow.aktualizujPunkty(punkty);
-                if (punkty > highScore) {
-                    highScore = punkty;
-                    panelPunktow.aktualizujHighScore(highScore);
-                    HighScoreManager.zapiszHighScore(highScore);
+        punktowyZegar = new Timer(500, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (graTrwa) {
+                    aktualizujPunkty();
                 }
             }
         });
@@ -179,24 +184,71 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+
         if (graTrwa) {
             statek.rysuj(g);
             for (ObiektGry obiekt : obiektyGry) {
                 obiekt.rysuj(g);
             }
+
+            if (czasWyswietlaniaKomunikatu > 0) {
+                g.setColor(Color.YELLOW);
+                g.setFont(new Font("Arial", Font.BOLD, 24));
+                g.drawString(wyswietlanyKomunikat, SZEROKOSC / 2 - 100, 100);
+                czasWyswietlaniaKomunikatu--;
+            }
         } else {
-            g.setColor(Color.GREEN);
-            g.setFont(new Font("Arial", Font.BOLD, 36));
-            g.drawString("KONIEC GRY!", SZEROKOSC / 2 - 100, WYSOKOSC / 2);
-            g.drawString("Najlepszy wynik: " + highScore, SZEROKOSC / 2 - 150, WYSOKOSC / 2 + 50);
+            wyswietlEkranKoncowy(g);
         }
+    }
+
+    private void wyswietlEkranKoncowy(Graphics g) {
+        g.setColor(Color.GREEN);
+        g.setFont(new Font("Arial", Font.BOLD, 36));
+        g.drawString("KONIEC GRY!", SZEROKOSC / 2 - 100, WYSOKOSC / 2);
+        g.drawString("Najlepszy wynik: " + highScore, SZEROKOSC / 2 - 150, WYSOKOSC / 2 + 50);
+        dodajPrzyciski();
+    }
+
+    private void dodajPrzyciski() {
+        if (przyciskWyjdz != null) return;
+
+        przyciskWyjdz = new JButton("Wyjdź");
+        przyciskRestart = new JButton("Spróbuj ponownie");
+
+        przyciskWyjdz.setBounds(SZEROKOSC / 2 - 75, WYSOKOSC / 2 + 100, 200, 40);
+        przyciskRestart.setBounds(SZEROKOSC / 2 - 75, WYSOKOSC / 2 + 150, 200, 40);
+
+        przyciskWyjdz.addActionListener(e -> System.exit(0));
+        przyciskRestart.addActionListener(e -> restartGry());
+
+        setLayout(null);
+        add(przyciskWyjdz);
+        add(przyciskRestart);
+        repaint();
+    }
+
+    private void restartGry() {
+        JFrame ramka = (JFrame) SwingUtilities.getWindowAncestor(this);
+        ramka.dispose();
+        SwingUtilities.invokeLater(RamkaGry::new);
     }
 
     public void setPanelPunktow(PanelPunktow panelPunktow) {
         this.panelPunktow = panelPunktow;
     }
 
-    private <T extends ObiektGry> void spawnObiekt(Class<T> typ, int x, int y) {
+    private void aktualizujPunkty() {
+        punkty++;
+        panelPunktow.aktualizujPunkty(punkty);
+        if (punkty > highScore) {
+            highScore = punkty;
+            panelPunktow.aktualizujHighScore(highScore);
+            HighScoreManager.zapiszHighScore(highScore);
+        }
+    }
+
+    private void spawnObiekt(Class<? extends ObiektGry> typ, int x, int y) {
         try {
             obiektyGry.add(typ.getDeclaredConstructor(int.class, int.class).newInstance(x, y));
         } catch (Exception e) {
@@ -204,78 +256,77 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         }
     }
 
+
     @Override
     public void actionPerformed(ActionEvent e) {
         if (!graTrwa) return;
 
-        bonusSpawnCounter++;
-        if (bonusSpawnCounter >= CZESTOTLIWOSC_BONUSOW) {
-            spawnObiekt(Bonus.class, (int) (Math.random() * (SZEROKOSC - Bonus.ROZMIAR)), 0);
-            bonusSpawnCounter = 0;
+        Class<?>[] klasyObiektow = {Kosmita.class, Kometa.class, Gwiazda.class, Bonus.class, Diament.class};
+        for (int i = 0; i < spawnCounters.length; i++) {
+            if (++spawnCounters[i] >= CZESTOTLIWOSCI[i]) {
+                spawnObiekt((Class<? extends ObiektGry>) klasyObiektow[i], (int) (Math.random() * (SZEROKOSC - 50)), 0);
+                spawnCounters[i] = 0;
+            }
         }
 
-        enemySpawnCounter++;
-        if (enemySpawnCounter >= CZESTOTLIWOSC_WROGOW) {
-            spawnObiekt(Kosmita.class, (int) (Math.random() * (SZEROKOSC - Kosmita.SZEROKOSC)), 0);
-            enemySpawnCounter = 0;
-        }
-
-        kometaSpawnCounter++;
-        if (kometaSpawnCounter >= CZESTOTLIWOSC_KOMET) {
-            spawnObiekt(Kometa.class, (int) (Math.random() * (SZEROKOSC - Kometa.SZEROKOSC)), 0);
-            kometaSpawnCounter = 0;
-        }
-
-        gwiazdaSpawnCounter++;
-        if (gwiazdaSpawnCounter >= CZESTOTLIWOSC_GWIAZD) {
-            spawnObiekt(Gwiazda.class, (int) (Math.random() * SZEROKOSC), 0);
-            gwiazdaSpawnCounter = 0;
-        }
-
-        // Lista do usunięcia obiektów
         ArrayList<ObiektGry> doUsuniecia = new ArrayList<>();
 
-        for (ObiektGry obiekt : obiektyGry) {
+        for (int i = 0; i < obiektyGry.size(); i++) {
+            ObiektGry obiekt = obiektyGry.get(i);
             obiekt.rusz(predkoscGry);
 
-            if (obiekt instanceof Pocisk) {
-                for (ObiektGry enemy : obiektyGry) {
-                    if ((enemy instanceof Kosmita) && obiekt.getBounds().intersects(enemy.getBounds())) {
-                        doUsuniecia.add(enemy);
-                        doUsuniecia.add(obiekt);
-                        punkty += 10;
-                        panelPunktow.aktualizujPunkty(punkty);
-                        break;
-                    }
-                }
-            }
-
-            if (obiekt instanceof Bonus && obiekt.getBounds().intersects(statek.getBounds())) {
-                punkty += 5;
-                panelPunktow.aktualizujPunkty(punkty);
-                doUsuniecia.add(obiekt);
-            }
-
-            if (obiekt instanceof Kosmita || obiekt instanceof Kometa) {
-                if (obiekt.getBounds().intersects(statek.getBounds())) {
-                    graTrwa = false;
-                    zegar.stop();
-                }
-            }
-
-            if (obiekt.getY() > WYSOKOSC) {
+            if (sprawdzKolizje(obiekt)) {
                 doUsuniecia.add(obiekt);
             }
         }
 
-        // Usunięcie obiektów po iteracji
         obiektyGry.removeAll(doUsuniecia);
 
         statek.rusz();
         predkoscGry += 0.001;
         panelPunktow.aktualizujPredkosc(predkoscGry);
-
         repaint();
+    }
+
+
+    private boolean sprawdzKolizje(ObiektGry obiekt) {
+        if (obiekt instanceof Pocisk) {
+            ArrayList<ObiektGry> doUsuniecia = new ArrayList<>();
+            for (ObiektGry enemy : obiektyGry) {
+                if (enemy instanceof Kosmita && obiekt.getBounds().intersects(enemy.getBounds())) {
+                    punkty += 10;
+                    panelPunktow.aktualizujPunkty(punkty);
+                    doUsuniecia.add(enemy);
+                }
+            }
+            obiektyGry.removeAll(doUsuniecia);
+            return !doUsuniecia.isEmpty();
+        }
+
+        if (obiekt instanceof Bonus || obiekt instanceof Diament) {
+            if (obiekt.getBounds().intersects(statek.getBounds())) {
+                if (obiekt instanceof Bonus) {
+                    punkty += 5;
+                } else {
+                    punkty += 100;
+                }
+                panelPunktow.aktualizujPunkty(punkty);
+                BonusItem bonusItem = obiekt.getClass().getAnnotation(BonusItem.class);
+                if (bonusItem != null) {
+                    wyswietlanyKomunikat = bonusItem.value();
+                }
+                czasWyswietlaniaKomunikatu = 100;
+                return true;
+            }
+        }
+
+        if ((obiekt instanceof Kosmita || obiekt instanceof Kometa) && obiekt.getBounds().intersects(statek.getBounds())) {
+            graTrwa = false;
+            zegar.stop();
+            return false;
+        }
+
+        return obiekt.getY() > WYSOKOSC;
     }
 
 
@@ -291,9 +342,7 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
 
     @Override
     public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_RIGHT) {
-            statek.ustawDx(0);
-        }
+        if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_RIGHT) statek.ustawDx(0);
     }
 
     @Override
@@ -302,9 +351,7 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
 }
 
 
-
-
-abstract class ObiektGry {
+class ObiektGry {
     protected int x, y;
     protected int szerokosc, wysokosc;
     protected int predkosc;
@@ -371,12 +418,23 @@ class Kosmita extends ObiektGry {
     }
 }
 
+@BonusItem("Dodatkowe punkty!")
 class Bonus extends ObiektGry {
     public static final int ROZMIAR = 20;
-    private static final int PREDKOSC = 2;
+    private static final int PREDKOSC = 4;
 
     public Bonus(int x, int y) {
         super(x, y, ROZMIAR, ROZMIAR, PREDKOSC, "textures/moneta.png");
+    }
+}
+
+@BonusItem("Mega Bonus! +100 punktów!")
+class Diament extends ObiektGry {
+    public static final int ROZMIAR = 30;
+    private static final int PREDKOSC = 5;
+
+    public Diament(int x, int y) {
+        super(x, y, ROZMIAR, ROZMIAR, PREDKOSC, "textures/diament.png");
     }
 }
 
@@ -399,7 +457,7 @@ class Statek extends ObiektGry {
     private int dx;
 
     public Statek(int x, int y) {
-        super(x, y, 50, 50, 0, "textures/rakieta.png");
+        super(x, y, 50, 50, 20, "textures/rakieta.png");
     }
 
 
