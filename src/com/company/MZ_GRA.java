@@ -219,7 +219,12 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         przyciskWyjdz.setBounds(SZEROKOSC / 2 - 75, WYSOKOSC / 2 + 100, 200, 40);
         przyciskRestart.setBounds(SZEROKOSC / 2 - 75, WYSOKOSC / 2 + 150, 200, 40);
 
-        przyciskWyjdz.addActionListener(e -> System.exit(0));
+        przyciskWyjdz.addActionListener(e -> {
+            JFrame ramka = (JFrame) SwingUtilities.getWindowAncestor(PanelGry.this);
+            if (ramka != null) {
+                ramka.dispose();
+            }
+        });
         przyciskRestart.addActionListener(e -> restartGry());
 
         setLayout(null);
