@@ -1,18 +1,26 @@
 package com.company;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.io.*;
+import java.lang.annotation.*;
 
-
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@interface BonusItem {
+    String value();
+}
 
 public class MZ_GRA {
 
     public void rozpocznijGre() {
-        SwingUtilities.invokeLater(RamkaGry::new);
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new RamkaGry();
+            }
+        });
     }
 }
 
@@ -42,7 +50,7 @@ class HighScoreManager {
 class RamkaGry extends JFrame {
     public RamkaGry() {
         setTitle("Strzelanka Kosmiczna");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setResizable(false);
 
         PanelGry panelGry = new PanelGry();
@@ -90,7 +98,6 @@ class PanelPunktow extends JPanel {
 
         gbc.gridy = 2;
 
-        // Wczytaj najwyższy wynik z pliku
         int zapisanyHighScore = wczytajHighScoreZPliku();
         highScoreLabel = new JLabel("High Score: " + zapisanyHighScore);
         highScoreLabel.setForeground(Color.WHITE);
@@ -104,14 +111,14 @@ class PanelPunktow extends JPanel {
             if (file.exists()) {
                 java.util.Scanner scanner = new java.util.Scanner(file);
                 if (scanner.hasNextInt()) {
-                    return scanner.nextInt(); // Odczytaj najwyższy wynik z pliku
+                    return scanner.nextInt();
                 }
                 scanner.close();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return 0; // Jeśli plik nie istnieje lub jest pusty, zwróć 0
+        return 0;
     }
 
 
@@ -132,32 +139,24 @@ class PanelPunktow extends JPanel {
     }
 }
 
-class PanelGry extends JPanel implements ActionListener, KeyListener {
-    private final int SZEROKOSC = 800;
-    private final int WYSOKOSC = 600;
-    private final int OPOZNIENIE = 15;
-    private final int CZESTOTLIWOSC_WROGOW = 100;
-    private final int CZESTOTLIWOSC_KOMET = 200;
-    private final int CZESTOTLIWOSC_GWIAZD = 20;
-    private int highScore;
-    private int punkty = 0;
-    private Timer punktowyZegar;
-    private PanelPunktow panelPunktow;
 
-    private Timer zegar;
-    private Statek statek;
-    private ArrayList<Pocisk> pociski;
-    private ArrayList<Kosmita> enemies;
-    private ArrayList<Kometa> komety;
-    private ArrayList<Gwiazda> gwiazdy;
-    private int enemySpawnCounter = 0;
-    private int kometaSpawnCounter = 0;
-    private int gwiazdaSpawnCounter = 0;
+class PanelGry extends JPanel implements ActionListener, KeyListener {
+    private static final int SZEROKOSC = 800, WYSOKOSC = 600, OPOZNIENIE = 15;
+    private static final int[] CZESTOTLIWOSCI = {100, 200, 20, 270, 515}; // Kosmita, Kometa, Gwiazda, Bonus, Diament
+
+    private int punkty = 0, highScore;
     private boolean graTrwa = true;
     private double predkoscGry = 1.0;
-    private ArrayList<Bonus> bonusy;
-    private final int CZESTOTLIWOSC_BONUSOW = 270;
-    private int bonusSpawnCounter = 0;
+    private Statek statek;
+    private ArrayList<ObiektGry> obiektyGry = new ArrayList<>();
+    private int[] spawnCounters = new int[CZESTOTLIWOSCI.length];
+
+    private String wyswietlanyKomunikat = "";
+    private int czasWyswietlaniaKomunikatu = 0;
+
+    private JButton przyciskWyjdz, przyciskRestart;
+    private Timer zegar, punktowyZegar;
+    private PanelPunktow panelPunktow;
 
     public PanelGry() {
         setPreferredSize(new Dimension(SZEROKOSC, WYSOKOSC));
@@ -165,265 +164,190 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
         setFocusable(true);
         addKeyListener(this);
 
-        bonusy = new ArrayList<>();
-
         statek = new Statek(SZEROKOSC / 2 - 25, WYSOKOSC - 80);
-        pociski = new ArrayList<>();
-        enemies = new ArrayList<>();
-        komety = new ArrayList<>();
-        gwiazdy = new ArrayList<>();
         highScore = HighScoreManager.odczytajHighScore();
-        if (punkty > highScore) {
-            highScore = punkty;
-            if (panelPunktow != null) {
-                panelPunktow.aktualizujHighScore(highScore);
-            }
-        }
 
         zegar = new Timer(OPOZNIENIE, this);
         zegar.start();
-
 
         punktowyZegar = new Timer(500, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (graTrwa) {
-                    punkty += 1;
-                    if (panelPunktow != null) {
-                        panelPunktow.aktualizujPunkty(punkty);
-                    }
-
-                    if (punkty > highScore) {
-                        highScore = punkty;
-                        if (panelPunktow != null) {
-                            panelPunktow.aktualizujHighScore(highScore);
-                        }
-                        HighScoreManager.zapiszHighScore(highScore);
-                    }
+                    aktualizujPunkty();
                 }
             }
         });
         punktowyZegar.start();
-
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+
         if (graTrwa) {
-
-            for (Bonus bonus : bonusy) {
-                bonus.rysuj(g);
-            }
-
-            for (Gwiazda gwiazda : gwiazdy) {
-                gwiazda.rysuj(g);
-            }
-
             statek.rysuj(g);
-            for (Pocisk pocisk : pociski) {
-                pocisk.rysuj(g);
+            for (ObiektGry obiekt : obiektyGry) {
+                obiekt.rysuj(g);
             }
-            for (Kosmita kosmita : enemies) {
-                kosmita.rysuj(g);
-            }
-            for (Kometa kometa : komety) {
-                kometa.rysuj(g);
+
+            if (czasWyswietlaniaKomunikatu > 0) {
+                g.setColor(Color.YELLOW);
+                g.setFont(new Font("Arial", Font.BOLD, 24));
+                g.drawString(wyswietlanyKomunikat, SZEROKOSC / 2 - 100, 100);
+                czasWyswietlaniaKomunikatu--;
             }
         } else {
-            g.setColor(Color.GREEN);
-            g.setFont(new Font("Arial", Font.BOLD, 36));
-            g.drawString("KONIEC GRY!", SZEROKOSC / 2 - 100, WYSOKOSC / 2);
-            g.drawString("Najlepszy wynik: " + highScore, SZEROKOSC / 2 - 150, WYSOKOSC / 2 + 50);
+            wyswietlEkranKoncowy(g);
         }
+    }
+
+    private void wyswietlEkranKoncowy(Graphics g) {
+        g.setColor(Color.GREEN);
+        g.setFont(new Font("Arial", Font.BOLD, 36));
+        g.drawString("KONIEC GRY!", SZEROKOSC / 2 - 100, WYSOKOSC / 2);
+        g.drawString("Najlepszy wynik: " + highScore, SZEROKOSC / 2 - 150, WYSOKOSC / 2 + 50);
+        dodajPrzyciski();
+    }
+
+    private void dodajPrzyciski() {
+        if (przyciskWyjdz != null) return;
+
+        przyciskWyjdz = new JButton("Wyjdź");
+        przyciskRestart = new JButton("Spróbuj ponownie");
+
+        przyciskWyjdz.setBounds(SZEROKOSC / 2 - 75, WYSOKOSC / 2 + 100, 200, 40);
+        przyciskRestart.setBounds(SZEROKOSC / 2 - 75, WYSOKOSC / 2 + 150, 200, 40);
+
+        przyciskWyjdz.addActionListener(e -> {
+            JFrame ramka = (JFrame) SwingUtilities.getWindowAncestor(PanelGry.this);
+            if (ramka != null) {
+                ramka.dispose();
+            }
+        });
+        przyciskRestart.addActionListener(e -> restartGry());
+
+        setLayout(null);
+        add(przyciskWyjdz);
+        add(przyciskRestart);
+        repaint();
+    }
+
+    private void restartGry() {
+        JFrame ramka = (JFrame) SwingUtilities.getWindowAncestor(this);
+        ramka.dispose();
+        SwingUtilities.invokeLater(RamkaGry::new);
     }
 
     public void setPanelPunktow(PanelPunktow panelPunktow) {
         this.panelPunktow = panelPunktow;
     }
 
-    private void spawnBonus() {
-        int x = (int) (Math.random() * (SZEROKOSC - Bonus.ROZMIAR));
-        bonusy.add(new Bonus(x, 0));
+    private void aktualizujPunkty() {
+        punkty++;
+        panelPunktow.aktualizujPunkty(punkty);
+        if (punkty > highScore) {
+            highScore = punkty;
+            panelPunktow.aktualizujHighScore(highScore);
+            HighScoreManager.zapiszHighScore(highScore);
+        }
     }
+
+    private void spawnObiekt(Class<? extends ObiektGry> typ, int x, int y) {
+        try {
+            obiektyGry.add(typ.getDeclaredConstructor(int.class, int.class).newInstance(x, y));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if (!graTrwa) return;
 
-        bonusSpawnCounter++;
-        if (bonusSpawnCounter >= CZESTOTLIWOSC_BONUSOW) {
-            spawnBonus();
-            bonusSpawnCounter = 0;
-        }
-
-        // Ruch i obsługa bonusów
-        Iterator<Bonus> bonusIterator = bonusy.iterator();
-        while (bonusIterator.hasNext()) {
-            Bonus bonus = bonusIterator.next();
-            bonus.rusz(predkoscGry);
-
-            if (bonus.getBounds().intersects(statek.getBounds())) {
-                // Gracz zebrał bonus
-                punkty += 5;
-                if (panelPunktow != null) {
-                    panelPunktow.aktualizujPunkty(punkty);
-                }
-                bonusIterator.remove();
-            } else if (bonus.getY() > WYSOKOSC) {
-                // Bonus wyszedł poza ekran
-                bonusIterator.remove();
+        Class<?>[] klasyObiektow = {Kosmita.class, Kometa.class, Gwiazda.class, Bonus.class, Diament.class};
+        for (int i = 0; i < spawnCounters.length; i++) {
+            if (++spawnCounters[i] >= CZESTOTLIWOSCI[i]) {
+                spawnObiekt((Class<? extends ObiektGry>) klasyObiektow[i], (int) (Math.random() * (SZEROKOSC - 50)), 0);
+                spawnCounters[i] = 0;
             }
         }
+
+        ArrayList<ObiektGry> doUsuniecia = new ArrayList<>();
+
+        for (int i = 0; i < obiektyGry.size(); i++) {
+            ObiektGry obiekt = obiektyGry.get(i);
+            obiekt.rusz(predkoscGry);
+
+            if (sprawdzKolizje(obiekt)) {
+                doUsuniecia.add(obiekt);
+            }
+        }
+
+        obiektyGry.removeAll(doUsuniecia);
 
         statek.rusz();
-
         predkoscGry += 0.001;
-        if (panelPunktow != null) {
-            panelPunktow.aktualizujPredkosc(predkoscGry);
-        }
-
-        for (int i = 0; i < pociski.size(); i++) {
-            Pocisk pocisk = pociski.get(i);
-            pocisk.rusz();
-            if (pocisk.getY() < 0) {
-                pociski.remove(i);
-                i--;
-            }
-        }
-
-        enemySpawnCounter++;
-        if (enemySpawnCounter >= CZESTOTLIWOSC_WROGOW) {
-            spawnEnemy();
-            enemySpawnCounter = 0;
-        }
-
-        kometaSpawnCounter++;
-        if (kometaSpawnCounter >= CZESTOTLIWOSC_KOMET) {
-            spawnKometa();
-            kometaSpawnCounter = 0;
-        }
-
-        gwiazdaSpawnCounter++;
-        if (gwiazdaSpawnCounter >= CZESTOTLIWOSC_GWIAZD) {
-            spawnGwiazda();
-            gwiazdaSpawnCounter = 0;
-        }
-
-        // Ruch gwiazd
-        Iterator<Gwiazda> gwiazdaIterator = gwiazdy.iterator();
-        while (gwiazdaIterator.hasNext()) {
-            Gwiazda gwiazda = gwiazdaIterator.next();
-            gwiazda.rusz(predkoscGry);
-            if (gwiazda.getY() > WYSOKOSC) {
-                gwiazdaIterator.remove();
-            }
-        }
-
-
-        Iterator<Kosmita> enemyIterator = enemies.iterator();
-        while (enemyIterator.hasNext()) {
-            Kosmita kosmita = enemyIterator.next();
-            kosmita.rusz(predkoscGry);
-
-            Iterator<Pocisk> pociskIterator = pociski.iterator();
-            while (pociskIterator.hasNext()) {
-                Pocisk pocisk = pociskIterator.next();
-                if (kosmita.getBounds().intersects(pocisk.getBounds())) {
-                    enemyIterator.remove();
-                    pociskIterator.remove();
-
-                    punkty += 10;
-                    if (panelPunktow != null) {
-                        panelPunktow.aktualizujPunkty(punkty);
-                        panelPunktow.repaint();
-                    }
-
-                    if (punkty > highScore) {
-                        highScore = punkty;
-                        if (panelPunktow != null) {
-                            panelPunktow.aktualizujHighScore(highScore);
-                        }
-                    }
-                    break;
-                }
-            }
-
-            if (kosmita.getBounds().intersects(statek.getBounds())) {
-                graTrwa = false;
-                zegar.stop();
-            }
-
-            if (kosmita.getY() > WYSOKOSC) {
-                enemyIterator.remove();
-            }
-        }
-
-
-        Iterator<Kometa> kometaIterator = komety.iterator();
-        while (kometaIterator.hasNext()) {
-            Kometa kometa = kometaIterator.next();
-            kometa.rusz(predkoscGry);
-
-            if (kometa.getBounds().intersects(statek.getBounds())) {
-                graTrwa = false;
-                zegar.stop();
-            }
-
-            if (kometa.getY() > WYSOKOSC) {
-                kometaIterator.remove();
-            }
-        }
-
-        if (!graTrwa) {
-            if (punkty > highScore) {
-                highScore = punkty;
-                HighScoreManager.zapiszHighScore(highScore);
-            }
-            repaint();
-            return;
-        }
-
+        panelPunktow.aktualizujPredkosc(predkoscGry);
         repaint();
     }
 
-    private void spawnEnemy() {
-        int x = (int) (Math.random() * (SZEROKOSC - Kosmita.SZEROKOSC));
-        enemies.add(new Kosmita(x, 0));
+
+    private boolean sprawdzKolizje(ObiektGry obiekt) {
+        if (obiekt instanceof Pocisk) {
+            ArrayList<ObiektGry> doUsuniecia = new ArrayList<>();
+            for (ObiektGry enemy : obiektyGry) {
+                if (enemy instanceof Kosmita && obiekt.getBounds().intersects(enemy.getBounds())) {
+                    punkty += 10;
+                    panelPunktow.aktualizujPunkty(punkty);
+                    doUsuniecia.add(enemy);
+                }
+            }
+            obiektyGry.removeAll(doUsuniecia);
+            return !doUsuniecia.isEmpty();
+        }
+
+        if (obiekt instanceof Bonus || obiekt instanceof Diament) {
+            if (obiekt.getBounds().intersects(statek.getBounds())) {
+                if (obiekt instanceof Bonus) {
+                    punkty += 5;
+                } else {
+                    punkty += 100;
+                }
+                panelPunktow.aktualizujPunkty(punkty);
+                BonusItem bonusItem = obiekt.getClass().getAnnotation(BonusItem.class);
+                if (bonusItem != null) {
+                    wyswietlanyKomunikat = bonusItem.value();
+                }
+                czasWyswietlaniaKomunikatu = 100;
+                return true;
+            }
+        }
+
+        if ((obiekt instanceof Kosmita || obiekt instanceof Kometa) && obiekt.getBounds().intersects(statek.getBounds())) {
+            graTrwa = false;
+            zegar.stop();
+            return false;
+        }
+
+        return obiekt.getY() > WYSOKOSC;
     }
 
-    private void spawnKometa() {
-        int x = (int) (Math.random() * (SZEROKOSC - Kometa.SZEROKOSC));
-        komety.add(new Kometa(x, 0));
-    }
-
-    private void spawnGwiazda() {
-        int x = (int) (Math.random() * SZEROKOSC);
-        gwiazdy.add(new Gwiazda(x, 0));
-    }
 
     @Override
     public void keyPressed(KeyEvent e) {
         if (!graTrwa) return;
-
         int klawisz = e.getKeyCode();
-
-        if (klawisz == KeyEvent.VK_LEFT) {
-            statek.ustawDx(-5);
-        } else if (klawisz == KeyEvent.VK_RIGHT) {
-            statek.ustawDx(5);
-        } else if (klawisz == KeyEvent.VK_SPACE) {
-            pociski.add(new Pocisk(statek.getX() + statek.getSzerokosc() / 2 - 2, statek.getY()));
-        }
+        if (klawisz == KeyEvent.VK_LEFT) statek.ustawDx(-5);
+        else if (klawisz == KeyEvent.VK_RIGHT) statek.ustawDx(5);
+        else if (klawisz == KeyEvent.VK_SPACE)
+            obiektyGry.add(new Pocisk(statek.getX() + statek.getSzerokosc() / 2 - 2, statek.getY() - 10));
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        int klawisz = e.getKeyCode();
-
-        if (klawisz == KeyEvent.VK_LEFT || klawisz == KeyEvent.VK_RIGHT) {
-            statek.ustawDx(0);
-        }
+        if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_RIGHT) statek.ustawDx(0);
     }
 
     @Override
@@ -432,199 +356,148 @@ class PanelGry extends JPanel implements ActionListener, KeyListener {
 }
 
 
-class Kometa {
-    public static final int SZEROKOSC = 50, WYSOKOSC = 50;
-    private int x, y;
-    private final int PREDKOSC = 3;
-    private static final Image KOMETA_OBRAZ = new ImageIcon("textures/kamien.png").getImage();
+class ObiektGry {
+    protected int x, y;
+    protected int szerokosc, wysokosc;
+    protected int predkosc;
+    protected Image obraz;
 
-    public Kometa(int x, int y) {
+    public ObiektGry(int x, int y, int szerokosc, int wysokosc, int predkosc, String sciezkaObrazu) {
         this.x = x;
         this.y = y;
+        this.szerokosc = szerokosc;
+        this.wysokosc = wysokosc;
+        this.predkosc = predkosc;
+
+        if (sciezkaObrazu != null) {
+            this.obraz = new ImageIcon(sciezkaObrazu).getImage();
+        }
     }
 
     public void rusz(double predkoscGry) {
-        y += PREDKOSC * predkoscGry;
+        y += predkosc * predkoscGry;
     }
 
     public void rysuj(Graphics g) {
-        g.drawImage(KOMETA_OBRAZ, x, y, SZEROKOSC, WYSOKOSC, null);
+        if (obraz != null) {
+            g.drawImage(obraz, x, y, szerokosc, wysokosc, null);
+        } else {
+            g.setColor(Color.WHITE);
+            g.fillRect(x, y, szerokosc, wysokosc);
+        }
     }
 
     public Rectangle getBounds() {
-        return new Rectangle(x, y, SZEROKOSC, WYSOKOSC);
+        return new Rectangle(x, y, szerokosc, wysokosc);
     }
 
     public int getY() {
         return y;
-    }
-}
-
-
-
-class Statek {
-    private int x, y, dx;
-    private final int SZEROKOSC = 50, WYSOKOSC = 50;
-    private Image rakietaObraz;
-
-    public Statek(int x, int y) {
-        this.x = x;
-        this.y = y;
-
-        // Załaduj obrazek rakiety
-        try {
-            rakietaObraz = new ImageIcon("textures/rakieta.png").getImage();
-        } catch (Exception e) {
-            e.printStackTrace();
-            rakietaObraz = null;
-        }
-    }
-
-    public void rusz() {
-        x += dx;
-        if (x < 0) x = 0;
-        if (x > 800 - SZEROKOSC) x = 800 - SZEROKOSC;
-    }
-
-    public void ustawDx(int dx) {
-        this.dx = dx;
-    }
-
-    public void rysuj(Graphics g) {
-        if (rakietaObraz != null) {
-            g.drawImage(rakietaObraz, x, y, SZEROKOSC, WYSOKOSC, null);
-        } else {
-            g.setColor(Color.BLUE);
-            g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
-        }
-    }
-
-    public Rectangle getBounds() {
-        return new Rectangle(x, y, SZEROKOSC, WYSOKOSC);
     }
 
     public int getX() {
         return x;
     }
 
-    public int getY() {
-        return y;
+    public int getSzerokosc(){
+        return szerokosc;
     }
 
-    public int getSzerokosc() {
-        return SZEROKOSC;
+}
+
+class Kometa extends ObiektGry {
+    public static final int SZEROKOSC = 50, WYSOKOSC = 50;
+    private static final int PREDKOSC = 3;
+
+    public Kometa(int x, int y) {
+        super(x, y, SZEROKOSC, WYSOKOSC, PREDKOSC, "textures/kamien.png");
     }
 }
 
-
-class Pocisk {
-    private int x, y;
-    private final int SZEROKOSC = 5, WYSOKOSC = 10;
-    private final int PREDKOSC = 10;
-    private final Color KOLOR = Color.RED;
-
-    public Pocisk(int x, int y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    public void rusz() {
-        y -= PREDKOSC;
-    }
-
-    public void rysuj(Graphics g) {
-        g.setColor(KOLOR);
-        g.fillRect(x, y, SZEROKOSC, WYSOKOSC);
-    }
-
-    public Rectangle getBounds() {
-        return new Rectangle(x, y, SZEROKOSC, WYSOKOSC);
-    }
-
-    public int getY() {
-        return y;
-    }
-}
-
-class Kosmita {
+class Kosmita extends ObiektGry {
     public static final int SZEROKOSC = 40, WYSOKOSC = 40;
-    private int x, y;
-    private final int PREDKOSC = 2;
-    private static final Image KOSMITA_OBRAZ = new ImageIcon("textures/kosmita.png").getImage();
+    private static final int PREDKOSC = 2;
 
     public Kosmita(int x, int y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    public void rusz(double predkoscGry) {
-        y += PREDKOSC * predkoscGry;
-    }
-
-    public void rysuj(Graphics g) {
-        g.drawImage(KOSMITA_OBRAZ, x, y, SZEROKOSC, WYSOKOSC, null);
-    }
-
-    public Rectangle getBounds() {
-        return new Rectangle(x, y, SZEROKOSC, WYSOKOSC);
-    }
-
-    public int getY() {
-        return y;
+        super(x, y, SZEROKOSC, WYSOKOSC, PREDKOSC, "textures/kosmita.png");
     }
 }
 
-class Gwiazda {
-    private int x, y;
-    private final int ROZMIAR = 2;
-    private final int PREDKOSC = 1;
-    private final Color KOLOR = Color.WHITE;
-
-    public Gwiazda(int x, int y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    public void rusz(double predkoscGry) {
-        y += PREDKOSC * predkoscGry;
-    }
-
-    public void rysuj(Graphics g) {
-        g.setColor(KOLOR);
-        g.fillRect(x, y, ROZMIAR, ROZMIAR);
-    }
-
-    public int getY() {
-        return y;
-    }
-}
-
-
-class Bonus {
+@BonusItem("Dodatkowe punkty!")
+class Bonus extends ObiektGry {
     public static final int ROZMIAR = 20;
-    private int x, y;
-    private final int PREDKOSC = 2;
-    private static final Image BONUS_OBRAZ = new ImageIcon("textures/moneta.png").getImage();
+    private static final int PREDKOSC = 4;
 
     public Bonus(int x, int y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    public void rusz(double predkoscGry) {
-        y += PREDKOSC * predkoscGry;
-    }
-
-    public void rysuj(Graphics g) {
-        g.drawImage(BONUS_OBRAZ, x, y, ROZMIAR, ROZMIAR, null);
-    }
-
-    public Rectangle getBounds() {
-        return new Rectangle(x, y, ROZMIAR, ROZMIAR);
-    }
-
-    public int getY() {
-        return y;
+        super(x, y, ROZMIAR, ROZMIAR, PREDKOSC, "textures/moneta.png");
     }
 }
+
+@BonusItem("Mega Bonus! +100 punktów!")
+class Diament extends ObiektGry {
+    public static final int ROZMIAR = 30;
+    private static final int PREDKOSC = 5;
+
+    public Diament(int x, int y) {
+        super(x, y, ROZMIAR, ROZMIAR, PREDKOSC, "textures/diament.png");
+    }
+}
+
+class Gwiazda extends ObiektGry {
+    private static final int ROZMIAR = 2;
+    private static final int PREDKOSC = 1;
+
+    public Gwiazda(int x, int y) {
+        super(x, y, ROZMIAR, ROZMIAR, PREDKOSC, null);
+    }
+
+    @Override
+    public void rysuj(Graphics g) {
+        g.setColor(Color.WHITE);
+        g.fillRect(x, y, szerokosc, wysokosc);
+    }
+}
+
+class Statek extends ObiektGry {
+    private int dx;
+
+    public Statek(int x, int y) {
+        super(x, y, 50, 50, 20, "textures/rakieta.png");
+    }
+
+
+    public void rusz() {
+        x += dx;
+        if (x < 0) x = 0;
+        if (x > 800 - szerokosc) x = 800 - szerokosc;
+    }
+
+    public void ustawDx(int dx) {
+        this.dx = dx;
+    }
+
+
+}
+
+class Pocisk extends ObiektGry {
+
+    private static final int PREDKOSC = -10;
+
+    public Pocisk(int x, int y) {
+        super(x, y, 5, 10, PREDKOSC, null);
+    }
+
+    @Override
+    public void rusz(double predkoscGry) {
+        y += predkosc;
+    }
+
+    @Override
+    public void rysuj(Graphics g) {
+        g.setColor(Color.RED);
+        g.fillRect(x, y, szerokosc, wysokosc);
+    }
+}
+
+
 
