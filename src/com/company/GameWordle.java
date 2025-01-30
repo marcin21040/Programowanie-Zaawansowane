@@ -8,9 +8,10 @@ public class GameWordle extends Game {
 
     public GameWordle(int maxAttempts) {
         super(maxAttempts);
-        this.correctWord = "APPLE"; // Możesz zmieniać na inne słowo
+        this.correctWord = "APPLE";
         this.attemptsUsed = 0;
     }
+
 
     @Override
     public void startGame() {
@@ -19,7 +20,7 @@ public class GameWordle extends Game {
             String guessedWord = JOptionPane.showInputDialog(null,
                     "Zgadnij 5-literowe słowo (Próba " + (attemptsUsed + 1) + " z " + maxAttempts + "):");
             if (guessedWord == null) {
-                break; // Gracz anulował
+                break;
             }
 
             guessedWord = guessedWord.toUpperCase();
