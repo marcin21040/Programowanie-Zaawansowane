@@ -32,10 +32,12 @@ public class MichalEnemy {
     private double slowMultiplier = 1.0;
 
     /**
-     * Konstruktor przyjmujący:
-     *  - punkt startowy (x, y)
-     *  - listę punktów (ścieżka), przez które wróg przejdzie
-     *  - prędkość, zdrowie
+     * Konstruktor wroga.
+     * @param x         początkowa pozycja x
+     * @param y         początkowa pozycja y
+     * @param path      ścieżka, którą ma przejść wróg
+     * @param speed     prędkość wroga
+     * @param health    ilość HP
      */
     public MichalEnemy(double x, double y, List<Point> path, double speed, int health) {
         this.x = x;
@@ -107,17 +109,10 @@ public class MichalEnemy {
     }
 
 
-    /**
-     * Poruszanie się w kierunku aktualnego checkpointu.
-     * Gdy osiągniemy dany punkt, przechodzimy do następnego.
-     * Jeśli wyszliśmy poza listę punktów, wróg może "opuścić mapę"
-     * (np. zadać obrażenia graczowi i zniknąć – zależy od logiki).
-     */
+
     private void moveAlongPath() {
         if (path == null || path.isEmpty() || currentCheckpointIndex >= path.size()) {
-            // Wróg dotarł do końca ścieżki –
-            // np. uznajmy, że zniknął z mapy (alive = false),
-            // albo w realnych TowerDefense – zmniejsza HP bazy gracza.
+            // Wróg dotarł do końca ścieżki – umiera
             alive = false;
             return;
         }
