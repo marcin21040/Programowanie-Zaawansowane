@@ -17,7 +17,7 @@ public class Menu extends JFrame implements ActionListener {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Tworzymy panel główny z tłem i centralizacją przycisków
+
         JPanel mainPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -28,41 +28,41 @@ public class Menu extends JFrame implements ActionListener {
         };
         mainPanel.setLayout(new BorderLayout());
 
-        // Panel do centralizacji przycisków
+
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new GridLayout(4, 1, 20, 20)); // Więcej odstępów między przyciskami
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(100, 300, 100, 300)); // Dodanie marginesów
 
-        // Przyciski gry
+
         newGameButton_Michala = createStyledButton("Gra Michała");
         newGameButton_Mateusza = createStyledButton("Gra Mateusza");
         newGameButton_Marcina = createStyledButton("Gra Marcina");
         exitButton = createStyledButton("Wyjdź");
 
-        // Dodajemy akcje do przycisków
+
         newGameButton_Michala.addActionListener(this);
         newGameButton_Mateusza.addActionListener(this);
         newGameButton_Marcina.addActionListener(this);
         exitButton.addActionListener(this);
 
-        // Dodajemy przyciski do panelu
+
         buttonPanel.add(newGameButton_Michala);
         buttonPanel.add(newGameButton_Mateusza);
         buttonPanel.add(newGameButton_Marcina);
         buttonPanel.add(exitButton);
 
-        // Centralizacja przycisków
+
         mainPanel.add(buttonPanel, BorderLayout.CENTER);
         add(mainPanel);
     }
 
-    // Metoda do stylizacji przycisków
+
     private JButton createStyledButton(String text) {
         JButton button = new JButton(text);
         button.setPreferredSize(new Dimension(300, 80));
         button.setFont(new Font("Arial", Font.BOLD, 24));
-        button.setBackground(new Color(59, 89, 182)); // Niebieskie tło
-        button.setForeground(Color.WHITE); // Biały tekst
+        button.setBackground(new Color(59, 89, 182));
+        button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
         button.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 3));
         return button;
@@ -82,7 +82,7 @@ public class Menu extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(this, "Nowa gra Mateusza rozpoczęta!");
         } else if (e.getSource() == newGameButton_Marcina) {
             WordleGameUI gameMarcin = new WordleGameUI();
-            gameMarcin.setVisible(true);  // Otwiera okno z grą Wordle
+            gameMarcin.setVisible(true);
             JOptionPane.showMessageDialog(this, "Nowa gra Marcina rozpoczęta!");
         }
     }
