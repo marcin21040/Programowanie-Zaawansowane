@@ -12,6 +12,7 @@ public class GameWordle extends Game {
         this.attemptsUsed = 0;
     }
 
+
     @Override
     public void startGame() {
         boolean hasWon = false;
