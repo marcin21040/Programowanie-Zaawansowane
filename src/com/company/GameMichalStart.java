@@ -14,6 +14,8 @@ public class GameMichalStart extends JFrame {
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+
+
     }
 
     /**
@@ -21,7 +23,8 @@ public class GameMichalStart extends JFrame {
      */
     public void startGame() {
         // Dodaj panel z logiką/rysowaniem
-        add(new GameMichalPanel());
+        GameMichalPanel panel = new GameMichalPanel(1);
+        add(panel);
 
         // Na końcu ustawiamy widoczność okna na true
         setVisible(true);

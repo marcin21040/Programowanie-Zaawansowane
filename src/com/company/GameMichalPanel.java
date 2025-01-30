@@ -46,16 +46,29 @@ public class GameMichalPanel extends JPanel {
     private int enemiesKilled = 0;
     private boolean gameOver = false;
 
-    public GameMichalPanel() {
+    // Poziom
+    private int currentLevel;
+
+    // Dodamy sobie przycisk restartu (możemy go dodać do panelu)
+    private JButton restartButton;
+
+    public GameMichalPanel(int level) {
 
         // Tworzymy planszę:
-        board = new MichalBoard();
+        board = new MichalBoard(currentLevel);
 
         // Rozmiar panelu = cols * tileSize, rows * tileSize
         setPreferredSize(new Dimension(board.getCols() * tileSize, board.getRows() * tileSize));
 
-
         enemyPath = board.getWaypoints();
+
+        restartButton = new JButton("Restart");
+        restartButton.setBounds(10, 10, 100, 30);
+        restartButton.setVisible(false);
+
+        // Po kliknięciu – restart gry
+        restartButton.addActionListener(e -> restartGame());
+        add(restartButton);
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -114,15 +127,19 @@ public class GameMichalPanel extends JPanel {
 
         // Informacje tekstowe
         g.setColor(Color.BLACK);
+
         g.drawString("Pieniądze: " + money, 10, 20);
         g.drawString("Limit wież: " + towers.size() + "/" + towerLimit, 10, 40);
         g.drawString("Kliknij, aby postawić wieżę (koszt: " + defaultTowerCost + ")", 10, 60);
         g.drawString("Baza HP: " + baseHealth, 10, 80);
+        g.drawString("Wrogowie: " + enemiesKilled + "/" + totalEnemiesToSpawn, 10, 100);
+        g.drawString("Poziom: " + currentLevel, 10, 120);
 
         if (gameOver) {
             g.setColor(Color.RED);
             g.setFont(g.getFont().deriveFont(Font.BOLD, 36f));
             g.drawString("KONIEC GRY", getWidth() / 2 - 100, getHeight() / 2);
+            restartButton.setVisible(true);
         }
     }
 
@@ -214,8 +231,54 @@ public class GameMichalPanel extends JPanel {
         }
     }
 
+    private void restartGame() {
+        // Ukrywamy przycisk
+        restartButton.setVisible(false);
+
+        // Resetujemy wszystkie zmienne do stanu początkowego:
+        money = 200;
+        towerLimit = 5;
+        baseHealth = 5;
+        enemiesSpawned = 0;
+        enemiesKilled = 0;
+        gameOver = false;
+
+        lastPassiveIncomeTime = 0;
+        lastSpawnTime = 0;
+
+        // Czyścimy listy
+        enemies.clear();
+        towers.clear();
+        projectiles.clear();
+
+        // (Opcjonalnie) wczytujemy ponownie board, jeśli chcemy "od nowa"
+        // board = new MichalBoard(currentLevel);
+        // enemyPath = board.getWaypoints();
+        // (Możesz też zostawić starą tablicę, jeśli "restart" jest zawsze z tym samym poziomem.)
+
+        // Wznowienie timera
+        gameTimer.start();
+    }
+
     private void placeTower(int x, int y, TowerType towerType) {
         if (gameOver) return;
+
+        int col = x / tileSize;
+        int row = y / tileSize;
+
+        if (row < 0 || row >= board.getRows() || col < 0 || col >= board.getCols()) {
+            // Kliknięcie było poza planszą
+            return;
+        }
+
+        // Sprawdzamy, czy to pole ma wartość 1 (miejsce na wieżę)
+        if (board.getTile(row, col) != 1) {
+            // Jeśli nie jest 1, np. jest 0 (ścieżka) — nie stawiamy wieży
+            System.out.println("Nie można postawić wieży na tym polu! (Musi być 1 w tablicy).");
+            return;
+        }
+
+
         if (money >= defaultTowerCost && towers.size() < towerLimit) {
             towers.add(new MichalTower(x, y, towerType));
             money -= defaultTowerCost;

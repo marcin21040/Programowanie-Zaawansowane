@@ -31,12 +31,54 @@ public class MichalTower {
     }
 
     public void draw(Graphics g) {
-        g.setColor(Color.BLUE);
-        g.fillRect(x - size / 2, y - size / 2, size, size);
+        Graphics2D g2d = (Graphics2D) g;  // Z rzutowaniem, by móc ewentualnie używać funkcji z Graphics2D
+
+        int halfSize = size / 2;
+        int leftX = x - halfSize;
+        int topY  = y - halfSize;
+
+        // --- Podstawa wieży (ciemnoszary prostokąt) ---
+        g2d.setColor(Color.DARK_GRAY);
+        g2d.fillRect(leftX, topY, size, size);
+
+        // --- Górna część (np. lufa lub głowica) ---
+        // Rysujemy mały „komin” na środku górnej krawędzi bazy.
+        int turretWidth = size / 4;   // szerokość wieżyczki
+        int turretHeight = size / 2;  // wysokość wieżyczki
+        int turretX = x - (turretWidth / 2);
+        int turretY = topY - (turretHeight / 2); // wystaje trochę ponad bazę
+        g2d.setColor(new Color(70, 70, 70));     // jaśniejszy szary
+        g2d.fillRect(turretX, turretY, turretWidth, turretHeight);
+
+        // --- Ozdobny obrys wieży (opcjonalnie) ---
+        g2d.setColor(Color.BLACK);
+        g2d.drawRect(leftX, topY, size, size);
+        g2d.drawRect(turretX, turretY, turretWidth, turretHeight);
+
+        // --- "Działko" – niewielki prostokąt wychodzący z wieżyczki ---
+        // Przykładowo pozioma lufa wychodząca z prawej strony górnej części wieżyczki
+        int barrelWidth = size / 2;
+        int barrelHeight = 6;
+        int barrelX = turretX + turretWidth;       // wychodzi z prawej krawędzi wieżyczki
+        int barrelY = turretY + (turretHeight / 4); // mniej więcej w 1/4 wysokości
+        g2d.setColor(Color.GRAY);
+        g2d.fillRect(barrelX, barrelY, barrelWidth, barrelHeight);
+        g2d.setColor(Color.BLACK);
+        g2d.drawRect(barrelX, barrelY, barrelWidth, barrelHeight);
+
+        // --- "Kopuła" wieży (np. okrąg na środku) ---
+        // Rysujemy okrąg na środku bazy, żeby wyglądała na obudowę wieżyczki
+        int domeDiameter = size / 2;
+        int domeX = x - (domeDiameter / 2);
+        int domeY = y - (domeDiameter / 2);
+        g2d.setColor(new Color(100, 100, 100, 150)); // trochę przezroczysty
+        g2d.fillOval(domeX, domeY, domeDiameter, domeDiameter);
+        g2d.setColor(Color.BLACK);
+        g2d.drawOval(domeX, domeY, domeDiameter, domeDiameter);
 
         // Zasięg (opcjonalnie narysuj okrąg, żeby widzieć, gdzie sięga wieża)
-        g.setColor(new Color(0, 0, 255, 50));
-        g.drawOval(x - range, y - range, range * 2, range * 2);
+        g2d.setColor(new Color(0, 0, 255, 50));
+        g2d.drawOval(x - range, y - range, range * 2, range * 2);
     }
 
     // Strzelanie do wroga
