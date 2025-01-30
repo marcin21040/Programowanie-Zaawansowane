@@ -1,9 +1,8 @@
 package com.company;
 
 public enum TowerType {
-    BASIC(100, 25, 1000, 50),  // range=100, damage=25, cooldown=1000ms, cost=50
-    SNIPER(200, 50, 2000, 100),
-    RAPID(80, 10, 500, 40);
+    BASIC(100, 25, 1000, 50),
+    SNIPER(200, 50, 2000, 100);
 
     private int range;
     private int damage;
