@@ -94,7 +94,7 @@ public class MichalEnemy {
         // Tło paska
         g.fillRect((int) (x - size / 2), (int) (y - size / 2) - 8, barWidth, barHeight);
         // Kolor "zielony" paska
-        g.setColor(Color.GREEN);
+        g.setColor(Color.CYAN);
         g.fillRect((int) (x - size / 2), (int) (y - size / 2) - 8, currentBarWidth, barHeight);
     }
 
