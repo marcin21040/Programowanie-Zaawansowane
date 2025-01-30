@@ -106,24 +106,6 @@ public class MichalEnemy {
         }
     }
 
-    /**
-     * Nałożenie efektu spowolnienia (np. przez wieżę "zamrażającą").
-     * @param multiplier np. 0.5 => prędkość spada do 50%
-     * @param durationMs czas trwania efektu w milisekundach
-     */
-    public void applySlow(double multiplier, long durationMs) {
-        long now = System.currentTimeMillis();
-        // Ustawiamy spowolnienie tylko wtedy, kiedy jest mocniejsze
-        // lub przedłuża dotychczasowy efekt
-        if (multiplier < slowMultiplier) {
-            slowMultiplier = multiplier;
-        }
-        // Jeżeli nowy efekt trwa dłużej niż dotychczasowy, wydłuż czas
-        long newEndTime = now + durationMs;
-        if (newEndTime > slowEffectEndTime) {
-            slowEffectEndTime = newEndTime;
-        }
-    }
 
     /**
      * Poruszanie się w kierunku aktualnego checkpointu.

@@ -13,7 +13,7 @@ public class MichalTower {
     // Wielkość wieży
     private int size = 30;
 
-    // Koszt wieży (jeśli chcemy różne wieże, można wprowadzić różne koszty w konstruktorze)
+    // Koszt wieży
     private int cost;
 
     private TowerType towerType;
@@ -31,7 +31,7 @@ public class MichalTower {
     }
 
     public void draw(Graphics g) {
-        Graphics2D g2d = (Graphics2D) g;  // Z rzutowaniem, by móc ewentualnie używać funkcji z Graphics2D
+        Graphics2D g2d = (Graphics2D) g;
 
         int halfSize = size / 2;
         int leftX = x - halfSize;
@@ -76,7 +76,7 @@ public class MichalTower {
         g2d.setColor(Color.BLACK);
         g2d.drawOval(domeX, domeY, domeDiameter, domeDiameter);
 
-        // Zasięg (opcjonalnie narysuj okrąg, żeby widzieć, gdzie sięga wieża)
+        // Zasięg
         g2d.setColor(new Color(0, 0, 255, 50));
         g2d.drawOval(x - range, y - range, range * 2, range * 2);
     }

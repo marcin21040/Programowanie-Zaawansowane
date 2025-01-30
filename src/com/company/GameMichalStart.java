@@ -29,7 +29,5 @@ public class GameMichalStart extends JFrame {
         // Na końcu ustawiamy widoczność okna na true
         setVisible(true);
 
-        // Tu można uruchomić pętlę gry, wątek, timery itp.
-        //new Thread(() -> gameLoop()).start();
     }
 }

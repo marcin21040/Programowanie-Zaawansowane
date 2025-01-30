@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Sztywna plansza z jedną poziomą ścieżką w wierszu 1.
+ * Sztywna plansza z poziomem gry.
  * 0 = ścieżka
  * 1 = blokada (teren na wieże)
  */
@@ -58,7 +58,6 @@ public class MichalBoard {
     public List<Point> getWaypoints() {
         List<Point> path = new ArrayList<>();
         // Dla każdej kolumny szukamy wiersza z 0
-        // (zakładamy, że w danej kolumnie jest tylko 1 ścieżka).
         for (int c = 0; c < cols; c++) {
             for (int r = 0; r < rows; r++) {
                 if (tiles[r][c] == 0) {

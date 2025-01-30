@@ -49,7 +49,7 @@ public class GameMichalPanel extends JPanel {
     // Poziom
     private int currentLevel;
 
-    // Dodamy sobie przycisk restartu (możemy go dodać do panelu)
+    // Dodamy sobie przycisk restartu
     private JButton restartButton;
 
     public GameMichalPanel(int level) {
@@ -250,11 +250,6 @@ public class GameMichalPanel extends JPanel {
         enemies.clear();
         towers.clear();
         projectiles.clear();
-
-        // (Opcjonalnie) wczytujemy ponownie board, jeśli chcemy "od nowa"
-        // board = new MichalBoard(currentLevel);
-        // enemyPath = board.getWaypoints();
-        // (Możesz też zostawić starą tablicę, jeśli "restart" jest zawsze z tym samym poziomem.)
 
         // Wznowienie timera
         gameTimer.start();

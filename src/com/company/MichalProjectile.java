@@ -9,7 +9,7 @@ public class MichalProjectile {
     private int damage;
     private boolean active = true;
 
-    // Cel - współrzędne wroga w momencie wystrzału
+    // Cel-współrzędne wroga w momencie wystrzału
     private double targetX;
     private double targetY;
 
