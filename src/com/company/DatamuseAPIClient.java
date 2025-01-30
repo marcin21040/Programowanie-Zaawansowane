@@ -7,10 +7,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class DatamuseAPIClient {
     private static final String API_URL = "https://api.datamuse.com/words?sp=";
-
 
     public static String getRandomWord() throws Exception {
         String queryPattern = "?????";
@@ -30,8 +31,6 @@ public class DatamuseAPIClient {
         connection.disconnect();
 
         String response = content.toString();
-
-
         List<String> words = new ArrayList<>();
 
         if (response.startsWith("[") && response.length() > 2) {
@@ -69,6 +68,19 @@ public class DatamuseAPIClient {
         String response = content.toString();
         System.out.println("Response from API for word '" + word + "': " + response);
 
-        return !response.equals("[]");
+        if (response.equals("[]")) {
+            return false;
+        }
+
+        JSONArray jsonArray = new JSONArray(response);
+        if (jsonArray.length() > 0) {
+            JSONObject wordData = jsonArray.getJSONObject(0);
+            String foundWord = wordData.getString("word");
+            int score = wordData.getInt("score");
+
+            return foundWord.equalsIgnoreCase(word) && score > 1000;
+        }
+
+        return false;
     }
 }

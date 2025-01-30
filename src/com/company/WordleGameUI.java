@@ -16,9 +16,9 @@ public class WordleGameUI extends JFrame implements ActionListener {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        gridPanel = new GridPanel(); // Najpierw inicjalizujemy GridPanel
-        keyboardPanel = new KeyboardPanel(this); // Potem KeyboardPanel
-        gameLogic = new WordleGameLogic(this); // Dopiero teraz przekazujemy this
+        gridPanel = new GridPanel();
+        keyboardPanel = new KeyboardPanel(this);
+        gameLogic = new WordleGameLogic(this);
 
         add(gridPanel, BorderLayout.CENTER);
         add(keyboardPanel, BorderLayout.SOUTH);

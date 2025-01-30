@@ -33,6 +33,6 @@ public class GridPanel extends JPanel {
     }
 
     public void clearCell(int row, int col) {
-        grid[row][col].setText("");  // Metoda usuwająca tekst z pola
+        grid[row][col].setText("");
     }
 }
